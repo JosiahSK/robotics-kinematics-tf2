@@ -26,6 +26,9 @@ graph LR
     ToolWrench["External Wrench F = [f, m]^T (Forces & Moments)"] -->|Jacobian Transpose J^T| JointTorques["Motor Torques tau = J^T * F"]
 ```
 
+![Manipulator Velocity Ellipsoid](../assets/generated/10-jacobian-manipulability-ellipsoid.png)
+
+
 ---
 
 ## 3. Mathematical Derivation of the Geometric Jacobian

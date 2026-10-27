@@ -14,20 +14,15 @@ By completing this chapter, you will be able to:
 A general 3D rigid body transformation requires **6 parameters**: 3 translations $(x, y, z)$ and 3 rotation angles.
 For a 6-joint robot arm, that would mean keeping track of $6 \times 6 = 36$ parameters!
 
-In 1955, Jacques Denavit and Richard Hartenberg observed that because every joint in a serial robot is constrained to rotate or slide along a single line in space (the joint axis), we can align our coordinate axes smartly:
-1. We align the local $Z$-axis directly with the motor's axis of rotation.
-2. We align the local $X$-axis along the **common normal** (the shortest perpendicular distance between adjacent joint axes).
+In 1955, Jacques Denavit and Richard Hartenberg showed that because every joint in a serial robot is constrained to rotate or translate along a fixed physical axis ($z_{i-1}$), we have freedom in how we attach coordinate frames to each link. By imposing **two specific geometric conditions** on Frame $\{i\}$ relative to Frame $\{i-1\}$:
 
-By enforcing these geometric constraints, **two parameters become zero**, reducing the required description from 6 numbers down to exactly **4 parameters per link**!
+1. **Condition 1 (Perpendicularity):** The axis $x_i$ must be perpendicular to axis $z_{i-1}$ ($x_i \perp z_{i-1}$, so $x_i \cdot z_{i-1} = 0$).
+2. **Condition 2 (Intersection):** The axis $x_i$ must intersect the axis $z_{i-1}$.
 
-```mermaid
-graph TD
-    ZPrev["z_{i-1} Axis (Joint i)"] -->|Rotate by theta_i about z_{i-1}| RotZ["Step 1: Rot(z, theta_i)"]
-    RotZ -->|Translate by d_i along z_{i-1}| TransZ["Step 2: Trans(z, d_i)"]
-    TransZ -->|Translate by a_i along x_i (Common Normal)| TransX["Step 3: Trans(x, a_i)"]
-    TransX -->|Rotate by alpha_i about x_i (Link Twist)| RotX["Step 4: Rot(x, alpha_i)"]
-    RotX --> FinalFrame["Frame {i} Complete!"]
-```
+These two constraints eliminate two degrees of freedom (preventing any translation or rotation along the intermediate $y$-axis). Consequently, the relative transformation between successive link frames is completely and uniquely described by **exactly four parameters** ($\theta_i, d_i, a_i, \alpha_i$) instead of six!
+
+![Standard DH Parameters Definition](../assets/diagrams/05-dh-parameters-definition.svg)
+
 
 ---
 

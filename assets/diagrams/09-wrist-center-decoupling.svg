@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="100%" height="100%">
+  <defs>
+    <marker id="arr-main" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2c3e50" />
+    </marker>
+    <marker id="arr-gold" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#d35400" />
+    </marker>
+    <filter id="f-card" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#ffffff" />
+
+  <!-- Header -->
+  <text x="480" y="38" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#2c3e50">
+    Kinematic Decoupling: Spherical Wrist Method (Pieper's Criterion)
+  </text>
+  <text x="480" y="60" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#7f8c8d">
+    Partitioning a 6-DOF Problem into Two Independent 3-DOF Subproblems
+  </text>
+
+  <!-- Flow Steps -->
+  <!-- Step 1: Input -->
+  <g transform="translate(40, 90)">
+    <rect x="0" y="0" width="260" height="175" rx="8" fill="#ebf5fb" stroke="#2980b9" stroke-width="2" filter="url(#f-card)" />
+    <rect x="0" y="0" width="260" height="35" rx="8" fill="#2980b9" />
+    <rect x="0" y="25" width="260" height="10" fill="#2980b9" />
+    <text x="130" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff">
+      1. Target End-Effector Pose
+    </text>
+    <text x="20" y="60" font-family="monospace" font-size="12" fill="#1b4f72">T_target = [ R_target | p_ee ]</text>
+    <text x="20" y="85" font-family="system-ui, sans-serif" font-size="11" fill="#2c3e50">• Position: p_ee = [x, y, z]^T</text>
+    <text x="20" y="105" font-family="system-ui, sans-serif" font-size="11" fill="#2c3e50">• Orientation: R_target in SO(3)</text>
+    <text x="20" y="130" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#c0392b">Approach Vector z_tool:</text>
+    <text x="20" y="150" font-family="monospace" font-size="11" fill="#c0392b">z_tool = R_target[:, 2]</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="300" y1="175" x2="340" y2="175" stroke="#2c3e50" stroke-width="3" marker-end="url(#arr-main)" />
+
+  <!-- Step 2: Wrist Center Decoupling -->
+  <g transform="translate(350, 90)">
+    <rect x="0" y="0" width="260" height="175" rx="8" fill="#fef9e7" stroke="#f39c12" stroke-width="2" filter="url(#f-card)" />
+    <rect x="0" y="0" width="260" height="35" rx="8" fill="#f39c12" />
+    <rect x="0" y="25" width="260" height="10" fill="#f39c12" />
+    <text x="130" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff">
+      2. Wrist Center Decoupling
+    </text>
+    <text x="20" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#7d6608">Because axes 4, 5, 6 intersect,</text>
+    <text x="20" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#7d6608">wrist position is purely set by J1, J2, J3:</text>
+    <rect x="15" y="95" width="230" height="40" rx="6" fill="#ffffff" stroke="#f39c12" />
+    <text x="130" y="120" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#b9770e">
+      p_wc = p_ee - d6 · z_tool
+    </text>
+    <text x="20" y="155" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">(Shift backward by tool offset d6)</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="610" y1="175" x2="650" y2="175" stroke="#2c3e50" stroke-width="3" marker-end="url(#arr-main)" />
+
+  <!-- Step 3: Inverse Position Kinematics -->
+  <g transform="translate(660, 90)">
+    <rect x="0" y="0" width="260" height="175" rx="8" fill="#eafaf1" stroke="#27ae60" stroke-width="2" filter="url(#f-card)" />
+    <rect x="0" y="0" width="260" height="35" rx="8" fill="#27ae60" />
+    <rect x="0" y="25" width="260" height="10" fill="#27ae60" />
+    <text x="130" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff">
+      3. Solve (θ1, θ2, θ3)
+    </text>
+    <text x="20" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#145a32">• Waist: θ1 = atan2(y_w, x_w)</text>
+    <text x="20" y="85" font-family="system-ui, sans-serif" font-size="11" fill="#145a32">• Elbow: sin(θ3) = (D²-a2²-d4²)/(2 a2 d4)</text>
+    <text x="35" y="102" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">(Elbow-up &amp; Elbow-down branches)</text>
+    <text x="20" y="125" font-family="system-ui, sans-serif" font-size="11" fill="#145a32">• Shoulder: θ2 = atan2(A·s + B·r, A·r - B·s)</text>
+    <text x="20" y="150" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#1e8449">Position Subproblem Solved!</text>
+  </g>
+
+  <!-- Arrow down from 3 to 4 -->
+  <path d="M 790 265 L 790 320 L 700 320" fill="none" stroke="#2c3e50" stroke-width="3" marker-end="url(#arr-main)" />
+
+  <!-- Step 4: Wrist Orientation Decoupling -->
+  <g transform="translate(420, 290)">
+    <rect x="0" y="0" width="260" height="180" rx="8" fill="#f4ecf7" stroke="#8e44ad" stroke-width="2" filter="url(#f-card)" />
+    <rect x="0" y="0" width="260" height="35" rx="8" fill="#8e44ad" />
+    <rect x="0" y="25" width="260" height="10" fill="#8e44ad" />
+    <text x="130" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff">
+      4. Decouple Wrist Rotation
+    </text>
+    <text x="20" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#4a235a">Compute arm base rotation:</text>
+    <text x="20" y="80" font-family="monospace" font-size="11" fill="#6c3483">R_0^3 = A1(θ1) · A2(θ2) · A3(θ3)</text>
+    <text x="20" y="110" font-family="system-ui, sans-serif" font-size="11" fill="#4a235a">Isolate wrist rotation matrix:</text>
+    <rect x="15" y="125" width="230" height="38" rx="6" fill="#ffffff" stroke="#8e44ad" />
+    <text x="130" y="148" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#6c3483">
+      R_3^6 = (R_0^3)^T · R_target
+    </text>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <line x1="420" y1="380" x2="320" y2="380" stroke="#2c3e50" stroke-width="3" marker-end="url(#arr-main)" />
+
+  <!-- Step 5: Solve (theta4, theta5, theta6) -->
+  <g transform="translate(40, 290)">
+    <rect x="0" y="0" width="260" height="180" rx="8" fill="#fadbd8" stroke="#e74c3c" stroke-width="2" filter="url(#f-card)" />
+    <rect x="0" y="0" width="260" height="35" rx="8" fill="#e74c3c" />
+    <rect x="0" y="25" width="260" height="10" fill="#e74c3c" />
+    <text x="130" y="23" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ffffff">
+      5. Solve (θ4, θ5, θ6)
+    </text>
+    <text x="20" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#78281f">Extract spherical Euler angles:</text>
+    <text x="20" y="80" font-family="monospace" font-size="11" fill="#922b21">θ5 = ± arccos(R_3^6[2, 2])</text>
+    <text x="20" y="105" font-family="monospace" font-size="11" fill="#922b21">θ4 = atan2(R_3^6[1,2], R_3^6[0,2])</text>
+    <text x="20" y="130" font-family="monospace" font-size="11" fill="#922b21">θ6 = atan2(R_3^6[2,1], -R_3^6[2,0])</text>
+    <text x="20" y="155" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#c0392b">
+      Complete 6-DOF Solution!
+    </text>
+  </g>
+</svg>

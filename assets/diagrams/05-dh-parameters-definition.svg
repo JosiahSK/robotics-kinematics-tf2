@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 540" width="100%" height="100%">
+  <defs>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2980b9" />
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#e74c3c" />
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#e67e22" />
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#27ae60" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#ffffff" />
+
+  <!-- Header -->
+  <text x="460" y="38" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#2c3e50">
+    Standard Denavit–Hartenberg (DH) Parameter Definitions
+  </text>
+  <text x="460" y="62" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#7f8c8d">
+    The 4 Spatial Parameters Connecting Successive Coordinate Frames Along a Kinematic Chain
+  </text>
+
+  <!-- Main Diagram Graphics Area -->
+  <g transform="translate(60, 90)">
+    <!-- Axis z_{i-1} -->
+    <line x1="160" y1="360" x2="160" y2="40" stroke="#2980b9" stroke-width="4" marker-end="url(#arr-blue)" />
+    <text x="145" y="35" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#2980b9">z_{i-1}</text>
+    <text x="75" y="380" font-family="system-ui, sans-serif" font-size="12" fill="#2980b9">Joint i Axis (Rotation/Translation)</text>
+
+    <!-- Origin O_{i-1} -->
+    <circle cx="160" cy="300" r="7" fill="#2c3e50" />
+    <text x="120" y="305" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2c3e50">O_{i-1}</text>
+    
+    <!-- Old x-axis x_{i-1} -->
+    <line x1="160" y1="300" x2="280" y2="300" stroke="#95a5a6" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arr-orange)" />
+    <text x="290" y="305" font-family="system-ui, sans-serif" font-size="13" fill="#7f8c8d">x_{i-1}</text>
+
+    <!-- d_i: Link offset along z_{i-1} -->
+    <line x1="140" y1="300" x2="140" y2="150" stroke="#e67e22" stroke-width="3" marker-end="url(#arr-orange)" marker-start="url(#arr-orange)" />
+    <text x="75" y="230" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#e67e22">d_i (Link Offset)</text>
+    <text x="50" y="246" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">Distance along z_{i-1}</text>
+
+    <!-- Intersection point of common normal with z_{i-1} -->
+    <circle cx="160" cy="150" r="6" fill="#e67e22" />
+
+    <!-- theta_i: Angle about z_{i-1} -->
+    <path d="M 230 300 A 70 70 0 0 0 215 260" fill="none" stroke="#8e44ad" stroke-width="3" marker-end="url(#arr-orange)" />
+    <text x="245" y="275" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#8e44ad">θ_i (Joint Angle)</text>
+    <text x="245" y="290" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">Angle from x_{i-1} to x_i about z_{i-1}</text>
+
+    <!-- Common normal x_i (perpendicular to both z_{i-1} and z_i) -->
+    <line x1="160" y1="150" x2="520" y2="150" stroke="#e74c3c" stroke-width="4" marker-end="url(#arr-red)" />
+    <text x="535" y="155" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#e74c3c">x_i (Common Normal)</text>
+
+    <!-- a_i: Link length along x_i -->
+    <line x1="160" y1="125" x2="440" y2="125" stroke="#27ae60" stroke-width="3" marker-end="url(#arr-green)" marker-start="url(#arr-green)" />
+    <text x="270" y="115" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#27ae60">a_i (Link Length)</text>
+    <text x="260" y="98" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">Distance along x_i between axes</text>
+
+    <!-- Origin O_i -->
+    <circle cx="440" cy="150" r="7" fill="#2c3e50" />
+    <text x="445" y="175" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">O_i (Origin of Frame i)</text>
+
+    <!-- Axis z_i (skewed / twisted by alpha_i) -->
+    <line x1="440" y1="320" x2="440" y2="20" stroke="#2980b9" stroke-width="4" transform="rotate(-30 440 150)" marker-end="url(#arr-blue)" />
+    <text x="500" y="35" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#2980b9">z_i</text>
+    <text x="510" y="55" font-family="system-ui, sans-serif" font-size="12" fill="#2980b9">Joint i+1 Axis</text>
+
+    <!-- alpha_i: Link twist angle about x_i -->
+    <path d="M 440 80 A 70 70 0 0 1 475 90" fill="none" stroke="#d35400" stroke-width="3" marker-end="url(#arr-orange)" />
+    <text x="490" y="95" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#d35400">α_i (Link Twist)</text>
+    <text x="490" y="110" font-family="system-ui, sans-serif" font-size="10" fill="#7f8c8d">Angle from z_{i-1} to z_i about x_i</text>
+  </g>
+
+  <!-- Bottom Formula Card -->
+  <g transform="translate(60, 440)">
+    <rect x="0" y="0" width="800" height="75" rx="8" fill="#f8f9fa" stroke="#bdc3c7" stroke-width="1.5" />
+    <text x="400" y="26" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#2c3e50">
+      Standard DH Homogeneous Matrix Formulation:
+    </text>
+    <text x="400" y="50" text-anchor="middle" font-family="monospace" font-size="13" fill="#1b4f72">
+      A_i = Rot(z, θ_i) · Trans(z, d_i) · Trans(x, a_i) · Rot(x, α_i)
+    </text>
+  </g>
+</svg>

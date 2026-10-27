@@ -20,19 +20,51 @@ from dh_transform import dh_matrix, extract_pose
 
 def rotation_error_vector(R_current: np.ndarray, R_target: np.ndarray) -> np.ndarray:
     """
-    Compute mathematically consistent 3D orientation error vector e_o in SO(3).
+    Compute 3D orientation error vector e_o in so(3) using the exact SO(3) logarithmic map.
     
-    Uses the skew-symmetric cross-product formulation:
-        e_o = 0.5 * (n x n_d + s x s_d + a x a_d)
-    where R_current = [n, s, a] and R_target = [n_d, s_d, a_d].
+    Uses the rotation matrix log-map:
+        R_err = R_current^T @ R_target
+        theta = arccos((trace(R_err) - 1) / 2)
+        e_o = (theta / (2*sin(theta))) * [R_err[2,1]-R_err[1,2], R_err[0,2]-R_err[2,0], R_err[1,0]-R_err[0,1]]
     
-    This avoids Euler angle discontinuities, gimbal lock, and arbitrary angle wrapping.
+    Special cases:
+        - theta ≈ 0: error approaches zero (returns near-zero vector)
+        - theta ≈ pi: fallback to safe axis extraction from R_err symmetric part
+    
+    The sign convention is chosen so that the Jacobian update delta_q = J_dls @ [e_p; e_o]
+    reduces both position and orientation error simultaneously.
     """
-    n, s, a = R_current[:, 0], R_current[:, 1], R_current[:, 2]
-    nd, sd, ad = R_target[:, 0], R_target[:, 1], R_target[:, 2]
+    # Express relative rotation in base frame to match geometric Jacobian convention:
+    # R_target = exp([omega]_x) @ R_current  ==>  R_err = R_target @ R_current.T
+    R_err = R_target @ R_current.T
+    # Clamp trace to valid range for arccos
+    trace_val = np.clip((np.trace(R_err) - 1.0) / 2.0, -1.0, 1.0)
+    theta = np.arccos(trace_val)
     
-    e_o = 0.5 * (np.cross(n, nd) + np.cross(s, sd) + np.cross(a, ad))
-    return e_o
+    # Skew-symmetric part -> axis
+    skew = np.array([
+        R_err[2, 1] - R_err[1, 2],
+        R_err[0, 2] - R_err[2, 0],
+        R_err[1, 0] - R_err[0, 1]
+    ])
+    
+    if abs(theta) < 1e-7:
+        # Near identity: error is effectively zero
+        return 0.5 * skew
+    elif abs(theta - np.pi) < 1e-4:
+        # Near 180-degree rotation: extract axis from symmetric part of R_err
+        # R_err = I + 2*sin^2(pi/2)*hat(k)^2 => symmetric part gives k
+        sym = (R_err + R_err.T) / 2.0
+        diag = np.diag(sym) + 1.0  # = 2*sin^2(theta/2)*ki^2 => ki^2
+        diag = np.clip(diag, 0.0, None)
+        k = np.sqrt(diag / np.sum(diag + 1e-15))
+        # Recover sign from skew part
+        if skew[0] < 0: k[0] = -k[0]
+        if skew[1] < 0: k[1] = -k[1]
+        if skew[2] < 0: k[2] = -k[2]
+        return theta * k
+    else:
+        return (theta / (2.0 * np.sin(theta))) * skew
 
 
 class NumericalIKSolver6DOF:
@@ -152,6 +184,8 @@ def analytical_ik_spherical_wrist(
     Steps:
         1. Decouple position: Find wrist center p_wc = p_ee - d6 * R_target * [0, 0, 1]^T.
         2. Solve inverse position kinematics (theta1, theta2, theta3) for p_wc.
+           Note: with alpha3=+pi/2, the formula (r^2+s^2-a2^2-d4^2)/(2*a2*d4) yields sin(theta3),
+           not cos(theta3). Elbow branches are theta3=arcsin(sin_th3) and theta3=pi-arcsin(sin_th3).
         3. Decouple orientation: Compute R_0^3(theta1, theta2, theta3).
         4. Compute wrist rotation R_3^6 = (R_0^3)^T * R_target.
         5. Solve inverse orientation kinematics (theta4, theta5, theta6) from R_3^6.
@@ -182,18 +216,22 @@ def analytical_ik_spherical_wrist(
         s = z_w - arm.d1
         D_sq = r**2 + s**2
         
-        # Law of cosines for link 2 (a2) and forearm (d4)
-        cos_theta3 = (D_sq - arm.a2**2 - arm.d4**2) / (2.0 * arm.a2 * arm.d4)
-        if abs(cos_theta3) > 1.0:
-            continue  # Target wrist center position is unreachable
+        # Formula gives sin(theta3) for this DH model (alpha3=+pi/2)
+        sin_theta3 = (D_sq - arm.a2**2 - arm.d4**2) / (2.0 * arm.a2 * arm.d4)
+        if abs(sin_theta3) > 1.0:
+            continue  # Wrist center outside reachable workspace
             
-        # Two elbow configurations: Elbow-up and Elbow-down
-        sin_theta3_pos = np.sqrt(max(0.0, 1.0 - cos_theta3**2))
-        for sin_theta3 in [sin_theta3_pos, -sin_theta3_pos]:
-            theta3 = np.arctan2(sin_theta3, cos_theta3)
+        # Two elbow solutions: elbow-down (theta3 = arcsin) and elbow-up (pi - arcsin)
+        theta3_base = np.arcsin(sin_theta3)
+        for theta3 in [theta3_base, np.pi - theta3_base]:
+            cos_theta3 = np.cos(theta3)
             
-            # Shoulder angle theta2
-            theta2 = np.arctan2(s, r) - np.arctan2(arm.d4 * sin_theta3, arm.a2 + arm.d4 * cos_theta3)
+            # Shoulder angle theta2 (derived from wrist-center geometry with alpha3=+pi/2)
+            # r = A*cos(th2) + B*sin(th2),  s = A*sin(th2) - B*cos(th2)
+            # where A = a2 + d4*sin(th3),  B = d4*cos(th3)
+            A = arm.a2 + arm.d4 * sin_theta3
+            B = arm.d4 * cos_theta3
+            theta2 = np.arctan2(A * s + B * r, A * r - B * s)
             
             # 3. Compute R_0^3 from (theta1, theta2, theta3)
             A1 = dh_matrix(theta=theta1, d=arm.d1, a=0.0, alpha=np.pi/2)
@@ -213,17 +251,18 @@ def analytical_ik_spherical_wrist(
             # R_3_6[2, 2] = cos(theta5)
             cos_th5 = np.clip(R_3_6[2, 2], -1.0, 1.0)
             
-            sin_th5_pos = np.sqrt(max(0.0, 1.0 - cos_th5**2))
-            for sin_th5 in [sin_th5_pos, -sin_th5_pos]:
-                theta5 = np.arctan2(sin_th5, cos_th5)
+            # Try both arccos branches: theta5 and its negative (sign of sin(th5) flips th4/th6)
+            theta5_pos = np.arccos(cos_th5)
+            for theta5 in [theta5_pos, -theta5_pos]:
+                sin_th5 = np.sin(theta5)
                 
-                if np.isclose(sin_th5, 0.0, atol=1e-5):
-                    # Wrist singularity (theta5 = 0): theta4 and theta6 are collinear
+                if np.isclose(abs(sin_th5), 0.0, atol=1e-5):
+                    # Wrist singularity: theta4 and theta6 are combined (only sum/difference is determinable)
                     theta4 = 0.0
                     theta6 = np.arctan2(R_3_6[1, 0], R_3_6[0, 0])
                 else:
-                    theta4 = np.arctan2(R_3_6[1, 2], R_3_6[0, 2])
-                    theta6 = np.arctan2(R_3_6[2, 1], -R_3_6[2, 0])
+                    theta4 = np.arctan2(R_3_6[1, 2] / sin_th5, R_3_6[0, 2] / sin_th5)
+                    theta6 = np.arctan2(R_3_6[2, 1] / sin_th5, -R_3_6[2, 0] / sin_th5)
                     
                 candidate = np.array([theta1, theta2, theta3, theta4, theta5, theta6], dtype=float)
                 
@@ -253,32 +292,37 @@ if __name__ == "__main__":
     arm = RobotArm6DOF()
     solver = NumericalIKSolver6DOF(arm)
     
-    # 1. Forward-Inverse Consistency Test
+    # Target Pose from known configuration
     q_known = np.radians([25.0, 35.0, -30.0, 15.0, -40.0, 20.0])
     T_target, _ = arm.forward_kinematics(q_known)
     target_pos, target_rot = extract_pose(T_target)
     
-    print("Known Joint Angles (deg): [25, 35, -30, 15, -40, 20]")
-    print(f"Target Position: {np.round(target_pos, 4)}")
+    print(f"Target Known Joint Angles (deg): {np.degrees(q_known).round(1)}")
+    print(f"Target Position (m): {np.round(target_pos, 4)}")
     
-    # Test Numerical IK
-    success, q_num, iters, pos_err, rot_err = solver.solve(target_pos, target_rot)
-    print(f"\nNumerical IK Result:")
-    print(f"  Success: {success} (in {iters} iterations)")
-    print(f"  Position Error: {pos_err:.2e} m")
-    print(f"  Orientation Error: {rot_err:.2e}")
-    print(f"  Computed Angles (deg): {np.round(np.degrees(q_num), 2)}")
+    # 1. Test Analytical Spherical-Wrist IK
+    print("\n1. Testing Analytical IK (Decoupled Wrist-Centre Method):")
+    analytical_sols = analytical_ik_spherical_wrist(arm, target_pos, target_rot)
+    print(f"   Found {len(analytical_sols)} analytical solutions:")
+    for i, sol in enumerate(analytical_sols):
+        T_check, _ = arm.forward_kinematics(sol)
+        err = np.linalg.norm(T_check[:3, 3] - target_pos)
+        print(f"   Sol {i+1} (deg): {np.degrees(sol).round(1)} | Pos Error: {err:.2e} m")
     
-    # Verify FK matches
-    T_result, _ = arm.forward_kinematics(q_num)
-    reproduced_pos = T_result[:3, 3]
-    print(f"  FK Position from Solution: {np.round(reproduced_pos, 4)}")
-    print(f"  Verified exact match? {np.allclose(reproduced_pos, target_pos, atol=1e-3)}")
+    # 2. Test Numerical IK (Local Convergence from perturbed seed)
+    print("\n2. Testing Numerical IK (Damped Least Squares with SO(3) Log-Map):")
+    q_seed = q_known + np.radians([5.0, -5.0, 5.0, -5.0, 5.0, -5.0])
+    success, q_num, iters, pos_err, rot_err = solver.solve(target_pos, target_rot, q_initial=q_seed)
+    print(f"   Success: {success} (in {iters} iterations)")
+    print(f"   Final Position Error: {pos_err:.2e} m")
+    print(f"   Final Orientation Error: {rot_err:.2e}")
+    print(f"   Computed Angles (deg): {np.degrees(q_num).round(1)}")
     
-    # Test Unreachable Target Handling
-    unreachable_pos = np.array([5.0, 5.0, 5.0])  # Far outside reach
+    # 3. Test Unreachable Target Handling
+    print("\n3. Testing Unreachable Target Handling (Out-of-Reach Target [5, 5, 5]):")
+    unreachable_pos = np.array([5.0, 5.0, 5.0])
     success_unreach, _, iters_u, pos_err_u, _ = solver.solve(unreachable_pos, target_rot)
-    print(f"\nUnreachable Target Test (5, 5, 5):")
-    print(f"  Reported Failure correctly? {not success_unreach}")
-    print(f"  Remaining error: {pos_err_u:.2f} m")
+    print(f"   Reported Failure correctly? {not success_unreach}")
+    print(f"   Remaining error: {pos_err_u:.2f} m")
     print("=" * 60)
+

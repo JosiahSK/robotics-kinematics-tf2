@@ -30,6 +30,9 @@ graph TD
     Eigen --> Ellipse["Geometric Error Ellipse in 2D / 3D Space"]
 ```
 
+![2D Gaussian Uncertainty and Covariance Confidence Ellipses](../assets/generated/11-gaussian-covariance-ellipse.png)
+
+
 ---
 
 ## 3. Mathematical Formulation

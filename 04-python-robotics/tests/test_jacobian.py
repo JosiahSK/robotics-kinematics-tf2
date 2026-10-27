@@ -54,3 +54,14 @@ def test_manipulability_measure():
     
     assert w_reg > 1e-4
     assert np.isfinite(w_reg)
+
+
+def test_dls_uses_svd_robustness():
+    """DLS inverse via SVD should handle near-singular Jacobians without NaN/Inf."""
+    from jacobian import damped_least_squares_inverse
+    # Create a rank-deficient Jacobian (singular case)
+    J = np.zeros((6, 6))
+    J[0, 0] = 1.0  # Only one non-zero singular value
+    J_dls = damped_least_squares_inverse(J, damping=0.05)
+    assert np.all(np.isfinite(J_dls)), "DLS should return finite values for near-singular Jacobian"
+    assert J_dls.shape == (6, 6)

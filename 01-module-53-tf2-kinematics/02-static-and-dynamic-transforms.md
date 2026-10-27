@@ -37,6 +37,9 @@ graph TD
     end
 ```
 
+![Static vs Dynamic Transforms](../assets/diagrams/03-fixed-vs-dynamic-transforms.svg)
+
+
 ---
 
 ## 3. Architecture & QoS Comparison

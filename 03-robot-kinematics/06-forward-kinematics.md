@@ -59,6 +59,9 @@ A valid forward kinematics calculation must satisfy:
 
 Consider a 2-link planar revolute arm ($2R$) with link lengths $l_1$ and $l_2$ moving in the $X$-$Y$ plane.
 
+![Planar 2R Arm Forward Kinematics Geometry and Coordinates](../assets/generated/06-planar-2r-forward-kinematics.png)
+
+
 ### 4.1 Direct Trigonometric Derivation:
 $$\mathbf{p}_1 = \begin{bmatrix} l_1 \cos(\theta_1) \\ l_1 \sin(\theta_1) \end{bmatrix}$$
 $$\mathbf{p}_2 = \mathbf{p}_1 + \begin{bmatrix} l_2 \cos(\theta_1 + \theta_2) \\ l_2 \sin(\theta_1 + \theta_2) \end{bmatrix} = \begin{bmatrix} l_1 \cos(\theta_1) + l_2 \cos(\theta_1 + \theta_2) \\ l_1 \sin(\theta_1) + l_2 \sin(\theta_1 + \theta_2) \end{bmatrix}$$

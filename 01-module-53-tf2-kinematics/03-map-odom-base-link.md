@@ -29,6 +29,9 @@ graph TD
     base_link --> imu_link["imu_link"]
 ```
 
+![The map-odom-base_link Coordinate Hierarchy](../assets/diagrams/02-map-odom-base-link.svg)
+
+
 ---
 
 ## 3. Detailed Frame Definitions (ROS REP 105)

@@ -20,6 +20,9 @@ graph LR
     TF --> RViz["RViz (RobotModel Display)"]
 ```
 
+![ROS 2 TF2 Computational Graph and Kinematic Data Flow](../assets/diagrams/12-ros2-tf-dataflow.svg)
+
+
 ---
 
 ## 3. How `robot_state_publisher` Works

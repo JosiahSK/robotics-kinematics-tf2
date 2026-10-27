@@ -53,6 +53,9 @@ graph TD
     end
 ```
 
+![Camera Body vs Optical Frame](../assets/diagrams/04-camera-body-vs-optical.svg)
+
+
 ### Static Transform between `camera_link` and `camera_optical_frame`:
 To convert from the body frame to the optical frame, rotate $-90^\circ$ about the $Z$-axis, followed by $-90^\circ$ about the new $X$-axis:
 $${}^{\text{link}}\mathbf{R}_{\text{optical}} = \begin{bmatrix} 0 & 0 & 1 \\ -1 & 0 & 0 \\ 0 & -1 & 0 \end{bmatrix}$$

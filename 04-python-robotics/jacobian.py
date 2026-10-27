@@ -117,16 +117,23 @@ def damped_least_squares_inverse(
     damping: float = 0.05
 ) -> np.ndarray:
     """
-    Compute the Levenberg-Marquardt Damped Least-Squares (DLS) pseudoinverse:
-        J_dls = J^T * (J * J^T + lambda^2 * I)^-1
+    Compute the Levenberg-Marquardt Damped Least-Squares (DLS) pseudoinverse using SVD:
+        J_dls = V * diag(sigma_i / (sigma_i^2 + lambda^2)) * U^T
         
+    This is numerically more stable than the explicit formula J^T(JJ^T + lambda^2*I)^{-1}
+    because it avoids forming JJ^T and avoids explicit matrix inversion.
+    
     Parameters:
-        J: 6x6 (or mxn) Jacobian matrix.
+        J: m x n Jacobian matrix.
         damping: Damping factor lambda. Prevents infinite joint velocities near singularities.
+        
+    Returns:
+        n x m DLS pseudoinverse.
     """
-    rows, cols = J.shape
-    I_m = np.eye(rows)
-    return J.T @ np.linalg.inv(J @ J.T + (damping ** 2) * I_m)
+    U, sigma, Vt = np.linalg.svd(J, full_matrices=False)
+    # Damped singular values: sigma_i / (sigma_i^2 + lambda^2)
+    sigma_dls = sigma / (sigma ** 2 + damping ** 2)
+    return Vt.T @ np.diag(sigma_dls) @ U.T
 
 
 if __name__ == "__main__":

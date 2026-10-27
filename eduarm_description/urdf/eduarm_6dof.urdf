@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+<!--
+  EduArm-6DOF: Illustrative 6-DOF Articulated Robot Arm URDF
+  Designed for ROS 2 Jazzy, Iron, and Humble
+  License: MIT
+-->
+<robot name="eduarm_6dof">
+
+  <!-- Material Definitions -->
+  <material name="dark_grey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+  <material name="industrial_orange">
+    <color rgba="0.95 0.45 0.05 1.0"/>
+  </material>
+  <material name="metallic_silver">
+    <color rgba="0.75 0.75 0.78 1.0"/>
+  </material>
+  <material name="bright_blue">
+    <color rgba="0.1 0.5 0.9 1.0"/>
+  </material>
+
+  <!-- World / Base Footprint -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.18" length="0.10"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.18" length="0.10"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint 1: Base Waist (Rotation about Z) -->
+  <joint name="joint_1" type="revolute">
+    <parent link="base_link"/>
+    <child link="link_1"/>
+    <origin xyz="0 0 0.400" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="150.0" velocity="2.5"/>
+  </joint>
+
+  <link name="link_1">
+    <visual>
+      <origin xyz="0 0 -0.15" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.10" length="0.30"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.15" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.10" length="0.30"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint 2: Shoulder Pitch (Rotation about Y) -->
+  <joint name="joint_2" type="revolute">
+    <parent link="link_1"/>
+    <child link="link_2"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.5708" upper="1.5708" effort="200.0" velocity="2.0"/>
+  </joint>
+
+  <link name="link_2">
+    <visual>
+      <origin xyz="0.250 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.500"/>
+      </geometry>
+      <material name="metallic_silver"/>
+    </visual>
+    <collision>
+      <origin xyz="0.250 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.08" length="0.500"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint 3: Elbow Pitch (Rotation about Y) -->
+  <joint name="joint_3" type="revolute">
+    <parent link="link_2"/>
+    <child link="link_3"/>
+    <origin xyz="0.500 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-2.513" upper="2.513" effort="120.0" velocity="2.5"/>
+  </joint>
+
+  <link name="link_3">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.09"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+  </link>
+
+  <!-- Joint 4: Forearm Roll (Rotation about X) -->
+  <joint name="joint_4" type="revolute">
+    <parent link="link_3"/>
+    <child link="link_4"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="80.0" velocity="3.0"/>
+  </joint>
+
+  <link name="link_4">
+    <visual>
+      <origin xyz="0.225 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.065" length="0.450"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0.225 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.065" length="0.450"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint 5: Wrist Pitch (Rotation about Y) -->
+  <joint name="joint_5" type="revolute">
+    <parent link="link_4"/>
+    <child link="link_5"/>
+    <origin xyz="0.450 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-1.5708" upper="1.5708" effort="50.0" velocity="3.5"/>
+  </joint>
+
+  <link name="link_5">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.07"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+  </link>
+
+  <!-- Joint 6: Flange Tool Roll (Rotation about X) -->
+  <joint name="joint_6" type="revolute">
+    <parent link="link_5"/>
+    <child link="tool_flange"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="30.0" velocity="4.0"/>
+  </joint>
+
+  <link name="tool_flange">
+    <visual>
+      <origin xyz="0.05 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.100"/>
+      </geometry>
+      <material name="bright_blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0.05 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.05" length="0.100"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Fixed Joint: Tool Center Point (TCP) -->
+  <joint name="tcp_joint" type="fixed">
+    <parent link="tool_flange"/>
+    <child link="tool_center_point"/>
+    <origin xyz="0.100 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="tool_center_point"/>
+
+</robot>

@@ -36,6 +36,9 @@ graph TD
     base_link --> right_wheel["right_wheel_link"]
 ```
 
+![ROS 2 Coordinate Frame Conventions and TF Tree](../assets/diagrams/01-coordinate-frames-rep103.svg)
+
+
 ---
 
 ## 3. Mathematical Formulation

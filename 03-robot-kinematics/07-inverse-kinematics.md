@@ -32,6 +32,9 @@ graph TD
     Branch --> Sol2["Solution 2: Elbow-Up Configuration"]
 ```
 
+![Planar 2R Arm Workspace and Dual IK Solutions](../assets/generated/07-planar-2r-workspace-ik.png)
+
+
 ---
 
 ## 3. Analytical Inverse Kinematics: Planar 2-Link Arm
