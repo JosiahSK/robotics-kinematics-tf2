@@ -1,24 +1,24 @@
 # Quality Audit & Verification Report — `robotics-kinematics-tf2`
 
-**Date:** 2026-10-27  
+**Date:** 2026-10-28 (Iteration 2 — Comprehensive Hardening)  
 **Auditor:** Antigravity Senior Robotics Software Engineer & Educational Lead  
 **Branch:** `main`  
 **Remote Target:** `https://github.com/JosiahSK/robotics-kinematics-tf2.git`  
-**Base Commit:** `d0d9154 feat: add robotics kinematics student notes`
+**Current Commit:** `6bc6e0e`
 
 ---
 
 ## 1. Executive Summary & Verification Outcomes
 
-A comprehensive, multi-phase technical audit and educational enhancement of the `robotics-kinematics-tf2` repository was conducted. All objectives were achieved:
+A rigorous quality audit and hardening pass was completed across the repository, directly resolving all 7 findings from code review:
 
-- **Mathematical Correctness:** The 6-DOF analytical inverse kinematics solver was re-derived, corrected, and verified against forward kinematics (error $< 10^{-16}\,\text{m}$).
-- **Numerical Robustness:** The numerical IK orientation error was upgraded to an exact Lie-algebra $SO(3)$ logarithmic map in the base frame; the Damped Least Squares (DLS) solver now uses SVD for singularity stability and converges in 3 iterations.
-- **Runnable ROS 2 Description:** A complete, standard ROS 2 description package (`eduarm_description`) was implemented with `package.xml`, `CMakeLists.txt`, `launch/view_arm.launch.py`, and `rviz/view_arm.rviz`.
-- **Test Suite Expansion:** Expanded automated tests from 22 to **34 unit tests** (`34/34 passed in 0.59s`), covering analytical IK branches, wrist singularities, known configurations, and URDF-to-DH geometric consistency.
-- **Scientific Illustrations:** Authored 12 original, high-resolution educational diagrams (hand-crafted vector SVGs and exact mathematical Matplotlib plots).
-- **Link Integrity:** Scanned 58 documentation files; **187/187 local Markdown links and image references verified with zero broken paths**.
-- **CI/CD Automation:** Added GitHub Actions workflow (`.github/workflows/ci.yml`) validating Python 3.10, 3.11, 3.12 across Ubuntu and Windows, along with URDF XML checks.
+1. **Canonical DH vs. URDF Alignment:** Formally established the canonical model architecture. Implemented explicit joint mapping functions (`urdf_to_dh_joints`, `dh_to_urdf_joints`), flange orientation rotation `dh_to_urdf_flange_rotation()`, and `urdf_forward_kinematics()`. Verified exact SE(3) pose equivalence ($\|\Delta\mathbf{p}\| < 10^{-7}\,\text{m}$, $\|\Delta\mathbf{R}\| < 10^{-7}$) across 50 random workspace configurations in `test_fk.py`.
+2. **Harmonized 6-DOF Worked Example (`08-six-dof-arm.md`):** Updated rotation matrix $\mathbf{R}_0^6$, approach vector $\mathbf{a}_d = [-0.5704, -0.0824, -0.8172]^T$, wrist center arithmetic $\mathbf{p}_{wc} = \mathbf{p}_d - d_6 \mathbf{a}_d$, and added an 8-branch joint limit table explaining exactly which limits are violated by rejected solutions.
+3. **Robust SO(3) Log-Map Axis Extraction:** Upgraded `rotation_error_vector()` to use symmetric off-diagonal elements ($\mathbf{k}\mathbf{k}^T = \frac{1}{2}(\mathbf{R}_{\text{err}} + \mathbf{I})$) for near-$180^\circ$ rotations, eliminating unstable vanishing-skew terms. Added tests across multiple arbitrary axes (including $(1, -1, 0)/\sqrt{2}$) at and near $180^\circ$.
+4. **Enhanced Test Suite (39 Tests):** Expanded from 34 to **39 passing tests** (`39/39 passed in 0.87s`). Replaced 0-iteration seeds in numerical IK with perturbed seeds requiring multi-step convergence, verified dual elbow branches within limits, and added rejection tests for non-$SO(3)$ matrices.
+5. **Dynamic ROS 2 Launch Parameterization:** Updated `eduarm_description/launch/view_arm.launch.py` to use `ParameterValue(Command(['cat ', LaunchConfiguration('urdf_path')]), value_type=str)` so custom URDF paths take effect dynamically. Added `launch` and `launch_ros` dependencies to `package.xml`.
+6. **Hardened CI Workflow:** Added `python scripts/check_links.py`, duplicate URDF file identity assertion (`filecmp`), and ROS 2 package XML schema validation to `.github/workflows/ci.yml`.
+7. **Documentation & Diagram Verification:** Verified all 12 SVG/PNG diagrams, confirmed 0 broken links across 58 Markdown files, and updated theory chapters with exact mathematical formulas.
 
 ---
 
@@ -118,7 +118,7 @@ Authored 12 original diagrams:
 
 | Command | Working Dir | Status | Execution Output Summary |
 |---|---|---|---|
-| `pytest -v 04-python-robotics/tests/` | repo root | **PASSED** | 34 passed in 0.59s |
+| `pytest -v 04-python-robotics/tests/` | repo root | **PASSED** | 39 passed in 0.87s |
 | `python 04-python-robotics/vectors_matrices.py` | repo root | **PASSED** | Linear algebra, cross products, skew matrices verified |
 | `python 04-python-robotics/rotation_matrices.py` | repo root | **PASSED** | SO(3), RPY, quaternions, Rodrigues verified |
 | `python 04-python-robotics/dh_transform.py` | repo root | **PASSED** | DH matrix composition and inversion verified |

@@ -139,6 +139,149 @@ class RobotArm6DOF:
         return transforms[4][:3, 3].copy()
 
 
+def urdf_to_dh_joints(q_urdf: np.ndarray) -> np.ndarray:
+    """
+    Convert joint angles from URDF coordinate frame conventions to standard DH model conventions.
+    
+    The URDF model uses standard robotics visualization conventions:
+    - Zero pose: arm is outstretched horizontally along the +X axis (TCP at [1.05, 0, 0.4]).
+    - Joint 2 (shoulder pitch) and Joint 3 (elbow pitch) rotate about +Y.
+    - Joint 5 (wrist pitch) rotates about +Y.
+    
+    The canonical DH model uses standard Denavit-Hartenberg parameterization:
+    - Shoulder and elbow DH axes z1, z2 point along -Y_base.
+    - Elbow DH zero angle has link 4 pointing along -Z_base (arm bent at 90 deg).
+    - Straight horizontal configuration corresponds to q_dh[2] = +pi/2.
+    
+    Mapping:
+        q_dh[0] =  q_urdf[0]
+        q_dh[1] = -q_urdf[1]
+        q_dh[2] =  pi/2 - q_urdf[2]
+        q_dh[3] =  q_urdf[3]
+        q_dh[4] = -q_urdf[4]
+        q_dh[5] =  q_urdf[5]
+    """
+    q = np.asarray(q_urdf, dtype=float).copy()
+    if q.shape != (6,):
+        raise ValueError(f"Expected 6 joint angles, got shape {q.shape}")
+    return np.array([
+        q[0],
+        -q[1],
+        np.pi / 2.0 - q[2],
+        q[3],
+        -q[4],
+        q[5]
+    ], dtype=float)
+
+
+def dh_to_urdf_joints(q_dh: np.ndarray) -> np.ndarray:
+    """
+    Convert joint angles from standard DH model conventions to URDF coordinate frame conventions.
+    
+    Inverse mapping of urdf_to_dh_joints:
+        q_urdf[0] =  q_dh[0]
+        q_urdf[1] = -q_dh[1]
+        q_urdf[2] =  pi/2 - q_dh[2]
+        q_urdf[3] =  q_dh[3]
+        q_urdf[4] = -q_dh[4]
+        q_urdf[5] =  q_dh[5]
+    """
+    q = np.asarray(q_dh, dtype=float).copy()
+    if q.shape != (6,):
+        raise ValueError(f"Expected 6 joint angles, got shape {q.shape}")
+    return np.array([
+        q[0],
+        -q[1],
+        np.pi / 2.0 - q[2],
+        q[3],
+        -q[4],
+        q[5]
+    ], dtype=float)
+
+
+def dh_to_urdf_flange_rotation() -> np.ndarray:
+    """
+    Return the 3x3 rotation matrix mapping DH flange orientation to URDF TCP orientation:
+        R_urdf = R_dh @ R_flange_offset
+    where R_flange_offset maps the DH end-effector frame (z pointing forward along tool,
+    x pointing up) to URDF TCP frame (x pointing forward along tool, z pointing up).
+    """
+    return np.array([
+        [0.0, 0.0, 1.0],
+        [0.0, -1.0, 0.0],
+        [1.0, 0.0, 0.0]
+    ], dtype=float)
+
+
+def urdf_forward_kinematics(
+    q_urdf: np.ndarray,
+    arm: Optional[RobotArm6DOF] = None
+) -> Tuple[np.ndarray, List[np.ndarray]]:
+    """
+    Compute forward kinematics using the URDF joint frame origins and rotation axes.
+    
+    Parameters:
+        q_urdf: 6 joint angles in URDF convention (radians).
+        arm: Optional RobotArm6DOF instance providing dimension parameters (d1, a2, d4, d6).
+        
+    Returns:
+        Tuple[T_tcp, link_transforms]:
+            - T_tcp: 4x4 transform of tool_center_point relative to base_link.
+            - link_transforms: List of 4x4 transforms for [base_link, link_1, link_2, link_3, link_4, link_5, tool_flange, tool_center_point].
+    """
+    if arm is None:
+        arm = RobotArm6DOF()
+        
+    q = np.asarray(q_urdf, dtype=float)
+    if q.shape != (6,):
+        raise ValueError(f"Expected 6 joint angles, got shape {q.shape}")
+        
+    from rotation_matrices import rot_x, rot_y, rot_z
+
+    # Base to Link 1 (Joint 1: origin [0, 0, d1], axis [0, 0, 1])
+    T_0_1 = np.eye(4, dtype=float)
+    T_0_1[:3, 3] = [0.0, 0.0, arm.d1]
+    T_0_1[:3, :3] = rot_z(q[0])
+
+    # Link 1 to Link 2 (Joint 2: origin [0, 0, 0], axis [0, 1, 0])
+    T_1_2 = np.eye(4, dtype=float)
+    T_1_2[:3, :3] = rot_y(q[1])
+
+    # Link 2 to Link 3 (Joint 3: origin [a2, 0, 0], axis [0, 1, 0])
+    T_2_3 = np.eye(4, dtype=float)
+    T_2_3[:3, 3] = [arm.a2, 0.0, 0.0]
+    T_2_3[:3, :3] = rot_y(q[2])
+
+    # Link 3 to Link 4 (Joint 4: origin [0, 0, 0], axis [1, 0, 0])
+    T_3_4 = np.eye(4, dtype=float)
+    T_3_4[:3, :3] = rot_x(q[3])
+
+    # Link 4 to Link 5 (Joint 5: origin [d4, 0, 0], axis [0, 1, 0])
+    T_4_5 = np.eye(4, dtype=float)
+    T_4_5[:3, 3] = [arm.d4, 0.0, 0.0]
+    T_4_5[:3, :3] = rot_y(q[4])
+
+    # Link 5 to Tool Flange (Joint 6: origin [0, 0, 0], axis [1, 0, 0])
+    T_5_6 = np.eye(4, dtype=float)
+    T_5_6[:3, :3] = rot_x(q[5])
+
+    # Tool Flange to Tool Center Point (Fixed joint: origin [d6, 0, 0])
+    T_6_tcp = np.eye(4, dtype=float)
+    T_6_tcp[:3, 3] = [arm.d6, 0.0, 0.0]
+
+    # Accumulate chain
+    T_0 = np.eye(4, dtype=float)
+    T_1 = T_0 @ T_0_1
+    T_2 = T_1 @ T_1_2
+    T_3 = T_2 @ T_2_3
+    T_4 = T_3 @ T_3_4
+    T_5 = T_4 @ T_4_5
+    T_6 = T_5 @ T_5_6
+    T_tcp = T_6 @ T_6_tcp
+
+    return T_tcp, [T_0, T_1, T_2, T_3, T_4, T_5, T_6, T_tcp]
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("6-DOF Arm Forward Kinematics Verification")

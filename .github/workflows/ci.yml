@@ -36,7 +36,7 @@ jobs:
           pytest -v 04-python-robotics/tests/
 
   markdown-link-check:
-    name: Markdown Structure & Link Integrity
+    name: Markdown Structure, Link Integrity & Package Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -47,20 +47,39 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate Markdown Files & URDF XML
+      - name: Check Markdown Links
+        run: |
+          python scripts/check_links.py
+
+      - name: Validate URDF Files and Identity
         run: |
           python -c "
-          import os, glob, xml.etree.ElementTree as ET
+          import filecmp, glob, xml.etree.ElementTree as ET
+          # Verify both URDF copies exist and are strictly identical
+          u1 = '05-ros2-practical/urdf/eduarm_6dof.urdf'
+          u2 = 'eduarm_description/urdf/eduarm_6dof.urdf'
+          assert filecmp.cmp(u1, u2, shallow=False), f'URDF files {u1} and {u2} do not match!'
+          print('Verified URDF copies are identical.')
 
-          # Check URDF files
+          # Validate XML parsing for all URDF files
           urdf_files = glob.glob('**/*.urdf', recursive=True)
-          assert len(urdf_files) >= 1, 'No URDF files found'
+          assert len(urdf_files) >= 2, 'Expected at least 2 URDF files'
           for u in urdf_files:
               ET.parse(u)
               print(f'Valid XML: {u}')
+          "
 
-          # Check Markdown count
-          md_files = glob.glob('**/*.md', recursive=True)
-          assert len(md_files) >= 40, f'Expected at least 40 markdown files, found {len(md_files)}'
-          print(f'Validated {len(md_files)} documentation markdown files.')
+      - name: Validate ROS 2 Package Metadata
+        run: |
+          python -c "
+          import xml.etree.ElementTree as ET
+          pkg_tree = ET.parse('eduarm_description/package.xml')
+          root = pkg_tree.getroot()
+          assert root.tag == 'package', 'Root tag must be package'
+          assert root.attrib.get('format') == '3', 'Package format must be 3'
+          assert root.find('name').text == 'eduarm_description', 'Package name mismatch'
+          exec_deps = {d.text for d in root.findall('exec_depend')}
+          expected = {'robot_state_publisher', 'joint_state_publisher_gui', 'rviz2', 'urdf', 'launch', 'launch_ros'}
+          assert expected.issubset(exec_deps), f'Missing dependencies: {expected - exec_deps}'
+          print('Package metadata validated successfully.')
           "

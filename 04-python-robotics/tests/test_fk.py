@@ -6,7 +6,13 @@ import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from forward_kinematics_2d import fk_2link_planar, fk_2link_dh, fk_3link_planar
-from forward_kinematics_6dof import RobotArm6DOF
+from forward_kinematics_6dof import (
+    RobotArm6DOF,
+    urdf_to_dh_joints,
+    dh_to_urdf_joints,
+    dh_to_urdf_flange_rotation,
+    urdf_forward_kinematics
+)
 from dh_transform import extract_pose
 
 
@@ -81,12 +87,18 @@ def test_6dof_known_configurations():
 
 
 def test_urdf_dh_parameter_consistency():
-    """Verify that the URDF XML dimensions match the canonical DH parameters."""
+    """Verify that both URDF XML copies exist, are identical, and match canonical DH parameters."""
     import xml.etree.ElementTree as ET
-    urdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "05-ros2-practical", "urdf", "eduarm_6dof.urdf")
-    assert os.path.exists(urdf_path), f"URDF file not found at {urdf_path}"
+    import filecmp
+    
+    urdf1 = os.path.join(os.path.dirname(__file__), "..", "..", "05-ros2-practical", "urdf", "eduarm_6dof.urdf")
+    urdf2 = os.path.join(os.path.dirname(__file__), "..", "..", "eduarm_description", "urdf", "eduarm_6dof.urdf")
+    
+    assert os.path.exists(urdf1), f"URDF file not found at {urdf1}"
+    assert os.path.exists(urdf2), f"URDF file not found at {urdf2}"
+    assert filecmp.cmp(urdf1, urdf2, shallow=False), "URDF files are not identical!"
 
-    tree = ET.parse(urdf_path)
+    tree = ET.parse(urdf1)
     root = tree.getroot()
 
     joints_by_name = {j.attrib["name"]: j for j in root.findall("joint")}
@@ -106,4 +118,67 @@ def test_urdf_dh_parameter_consistency():
     # TCP: distance d6 = 0.100m
     tcp_xyz = [float(x) for x in joints_by_name["tcp_joint"].find("origin").attrib["xyz"].split()]
     assert np.isclose(tcp_xyz[0], 0.100)
+
+
+def test_urdf_to_dh_joint_conversions_roundtrip():
+    """Verify that urdf_to_dh_joints and dh_to_urdf_joints are exact mutual inverses."""
+    rng = np.random.default_rng(42)
+    for _ in range(20):
+        q_urdf = rng.uniform(-np.pi, np.pi, 6)
+        q_dh = urdf_to_dh_joints(q_urdf)
+        q_rec = dh_to_urdf_joints(q_dh)
+        assert np.allclose(q_urdf, q_rec, atol=1e-12)
+
+        q_dh_orig = rng.uniform(-np.pi, np.pi, 6)
+        q_u = dh_to_urdf_joints(q_dh_orig)
+        q_dh_rec = urdf_to_dh_joints(q_u)
+        assert np.allclose(q_dh_orig, q_dh_rec, atol=1e-12)
+
+
+def test_urdf_fk_vs_dh_fk_zero_pose():
+    """Verify URDF forward kinematics at all-zero configuration."""
+    arm = RobotArm6DOF()
+    q_urdf_zero = np.zeros(6)
+    T_tcp, _ = urdf_forward_kinematics(q_urdf_zero, arm)
+    
+    # At URDF zero: arm is outstretched along +X:
+    # x = a2 + d4 + d6 = 0.500 + 0.450 + 0.100 = 1.050 m
+    # z = d1 = 0.400 m
+    assert np.allclose(T_tcp[:3, 3], [1.050, 0.000, 0.400], atol=1e-6)
+    assert np.allclose(T_tcp[:3, :3], np.eye(3), atol=1e-6)
+
+    # Cross check with DH equivalent joint angles: q_dh = [0, 0, pi/2, 0, 0, 0]
+    q_dh_equiv = urdf_to_dh_joints(q_urdf_zero)
+    assert np.allclose(q_dh_equiv, [0.0, 0.0, np.pi / 2.0, 0.0, 0.0, 0.0], atol=1e-6)
+    T_dh, _ = arm.forward_kinematics(q_dh_equiv)
+    assert np.allclose(T_dh[:3, 3], T_tcp[:3, 3], atol=1e-6)
+    # Check orientation mapping
+    R_flange_offset = dh_to_urdf_flange_rotation()
+    assert np.allclose(T_dh[:3, :3] @ R_flange_offset, T_tcp[:3, :3], atol=1e-6)
+
+
+def test_urdf_fk_vs_dh_fk_multi_configuration():
+    """Verify exact SE(3) pose equivalence between URDF transforms and DH forward kinematics across 50 random configurations."""
+    arm = RobotArm6DOF()
+    rng = np.random.default_rng(2024)
+    R_flange_offset = dh_to_urdf_flange_rotation()
+
+    for _ in range(50):
+        q_urdf = rng.uniform(-1.5, 1.5, 6)
+        T_urdf, _ = urdf_forward_kinematics(q_urdf, arm)
+
+        q_dh = urdf_to_dh_joints(q_urdf)
+        T_dh, _ = arm.forward_kinematics(q_dh)
+
+        # 1. Position must match exactly in base coordinates
+        assert np.allclose(T_urdf[:3, 3], T_dh[:3, 3], atol=1e-7), (
+            f"Position mismatch:\nURDF: {T_urdf[:3, 3]}\nDH:   {T_dh[:3, 3]}"
+        )
+
+        # 2. Orientation must match after applying flange frame conversion
+        R_dh_mapped = T_dh[:3, :3] @ R_flange_offset
+        assert np.allclose(T_urdf[:3, :3], R_dh_mapped, atol=1e-7), (
+            f"Orientation mismatch:\nURDF:\n{T_urdf[:3, :3]}\nDH mapped:\n{R_dh_mapped}"
+        )
+
 

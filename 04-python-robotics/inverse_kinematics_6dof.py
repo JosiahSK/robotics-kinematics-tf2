@@ -16,26 +16,27 @@ import numpy as np
 from forward_kinematics_6dof import RobotArm6DOF
 from jacobian import geometric_jacobian_6dof, damped_least_squares_inverse
 from dh_transform import dh_matrix, extract_pose
+from rotation_matrices import is_rotation_matrix
 
 
 def rotation_error_vector(R_current: np.ndarray, R_target: np.ndarray) -> np.ndarray:
     """
     Compute 3D orientation error vector e_o in so(3) using the exact SO(3) logarithmic map.
     
-    Uses the rotation matrix log-map:
-        R_err = R_current^T @ R_target
+    The error is defined in the base frame to align with the base-frame Geometric Jacobian:
+        R_target = exp([e_o]_x) @ R_current  ==>  R_err = R_target @ R_current.T
         theta = arccos((trace(R_err) - 1) / 2)
         e_o = (theta / (2*sin(theta))) * [R_err[2,1]-R_err[1,2], R_err[0,2]-R_err[2,0], R_err[1,0]-R_err[0,1]]
     
     Special cases:
-        - theta ≈ 0: error approaches zero (returns near-zero vector)
-        - theta ≈ pi: fallback to safe axis extraction from R_err symmetric part
+        - theta ≈ 0: e_o = 0.5 * [R_err[2,1]-R_err[1,2], ...] (first-order Taylor expansion)
+        - theta ≈ pi: robust axis extraction using symmetric off-diagonal elements
+          (Shepperd / axis-angle method) avoiding vanishing skew terms.
     
     The sign convention is chosen so that the Jacobian update delta_q = J_dls @ [e_p; e_o]
-    reduces both position and orientation error simultaneously.
+    reduces both position and orientation error simultaneously in the base frame.
     """
     # Express relative rotation in base frame to match geometric Jacobian convention:
-    # R_target = exp([omega]_x) @ R_current  ==>  R_err = R_target @ R_current.T
     R_err = R_target @ R_current.T
     # Clamp trace to valid range for arccos
     trace_val = np.clip((np.trace(R_err) - 1.0) / 2.0, -1.0, 1.0)
@@ -52,16 +53,22 @@ def rotation_error_vector(R_current: np.ndarray, R_target: np.ndarray) -> np.nda
         # Near identity: error is effectively zero
         return 0.5 * skew
     elif abs(theta - np.pi) < 1e-4:
-        # Near 180-degree rotation: extract axis from symmetric part of R_err
-        # R_err = I + 2*sin^2(pi/2)*hat(k)^2 => symmetric part gives k
+        # Near 180-degree rotation: skew approaches zero, extract axis from symmetric part
+        # R_err = 2 * k * k^T - I
         sym = (R_err + R_err.T) / 2.0
-        diag = np.diag(sym) + 1.0  # = 2*sin^2(theta/2)*ki^2 => ki^2
-        diag = np.clip(diag, 0.0, None)
-        k = np.sqrt(diag / np.sum(diag + 1e-15))
-        # Recover sign from skew part
-        if skew[0] < 0: k[0] = -k[0]
-        if skew[1] < 0: k[1] = -k[1]
-        if skew[2] < 0: k[2] = -k[2]
+        diag = np.diag(sym)
+        m = int(np.argmax(diag))
+        k = np.zeros(3)
+        k[m] = np.sqrt(max(0.0, (diag[m] + 1.0) / 2.0))
+        if k[m] > 1e-6:
+            for j in range(3):
+                if j != m:
+                    k[j] = sym[m, j] / (2.0 * k[m])
+            norm_k = np.linalg.norm(k)
+            if norm_k > 1e-6:
+                k = k / norm_k
+        if np.dot(k, skew) < 0:
+            k = -k
         return theta * k
     else:
         return (theta / (2.0 * np.sin(theta))) * skew
@@ -111,6 +118,9 @@ class NumericalIKSolver6DOF:
         """
         target_pos = np.asarray(target_pos, dtype=float).flatten()
         target_rot = np.asarray(target_rot, dtype=float)
+        
+        if not is_rotation_matrix(target_rot):
+            raise ValueError("target_rot must be a valid 3x3 SO(3) rotation matrix (det(R)=1, R^T*R=I).")
         
         if q_initial is None:
             q = np.array([0.1, 0.2, -0.2, 0.1, 0.1, 0.1], dtype=float)
@@ -195,6 +205,9 @@ def analytical_ik_spherical_wrist(
     """
     target_pos = np.asarray(target_pos, dtype=float).flatten()
     target_rot = np.asarray(target_rot, dtype=float)
+    
+    if not is_rotation_matrix(target_rot):
+        raise ValueError("target_rot must be a valid 3x3 SO(3) rotation matrix (det(R)=1, R^T*R=I).")
     
     # Tool axis z_tool in base frame is column 2 of target_rot
     z_tool = target_rot[:, 2]

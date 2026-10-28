@@ -41,28 +41,32 @@ def test_2link_ik_unreachable():
 
 def test_6dof_numerical_ik_convergence():
     """
-    Verifies the numerical IK solver converges to tolerance for known reachable poses.
-    Seeds are set to q_true so the solver starts at the exact solution — this tests
-    that the error computation, Jacobian, and DLS update all work correctly without
-    introducing artificial basin-of-attraction failures from joint-limit clamping.
+    Verifies the numerical IK solver converges from perturbed initial seeds,
+    requiring real iterations to reach tolerance.
     """
     arm = RobotArm6DOF()
-    solver = NumericalIKSolver6DOF(arm, pos_tolerance=1e-3, rot_tolerance=1e-2, max_iterations=100)
+    solver = NumericalIKSolver6DOF(arm, pos_tolerance=1e-3, rot_tolerance=1e-2, max_iterations=150)
     test_configs = [
         np.radians([15.0, 30.0, -20.0, 10.0, -35.0, 25.0]),
         np.radians([-20.0, 45.0, -15.0, -10.0, 20.0, -15.0]),
         np.radians([35.0, 20.0, -40.0, 25.0, -20.0, 10.0])
     ]
+    rng = np.random.default_rng(42)
     for q_true in test_configs:
         T_target, _ = arm.forward_kinematics(q_true)
         target_pos, target_rot = extract_pose(T_target)
-        # Seed = q_true: guarantees 1-step convergence and tests all error/Jacobian/DLS paths
-        success, q_sol, iters, pos_err, rot_err = solver.solve(target_pos, target_rot, q_initial=q_true)
+        # Perturb seed by up to ±0.10 rad (~5.7 deg) to verify real multi-iteration convergence
+        q_seed = q_true + rng.uniform(-0.10, 0.10, 6)
+        success, q_sol, iters, pos_err, rot_err = solver.solve(target_pos, target_rot, q_initial=q_seed)
         assert success, f"IK failed to converge for target {target_pos} (err={pos_err:.4f})"
-        assert pos_err < 1e-3
-        assert rot_err < 1e-2
+        assert iters > 0, "Numerical solver should execute at least 1 iteration from perturbed seed"
+        assert pos_err < 1e-3, f"Position error {pos_err:.6f} exceeded tolerance"
+        assert rot_err < 1e-2, f"Orientation error {rot_err:.6f} exceeded tolerance"
         T_sol, _ = arm.forward_kinematics(q_sol)
         assert np.allclose(T_sol[:3, 3], target_pos, atol=2e-3)
+        from inverse_kinematics_6dof import rotation_error_vector
+        final_rot_err = np.linalg.norm(rotation_error_vector(T_sol[:3, :3], target_rot))
+        assert final_rot_err < 1e-2
 
 
 def test_6dof_numerical_ik_unreachable_target():
@@ -134,16 +138,29 @@ def test_6dof_analytical_ik_fk_consistency():
 
 
 def test_6dof_analytical_ik_two_branches():
-    """Analytical IK should return elbow-up and elbow-down branches as different joint angles."""
+    """Analytical IK should find both elbow-up and elbow-down branches when both are within joint limits."""
     arm = RobotArm6DOF()
-    q_true = np.radians([20.0, 30.0, -25.0, 15.0, -35.0, 10.0])
-    T_target, _ = arm.forward_kinematics(q_true)
+    # Configuration chosen so that both theta3=45 deg and theta3=180-45=135 deg are within limits [-144 deg, 144 deg]
+    q_known = np.radians([0.0, 20.0, 45.0, 0.0, 30.0, 0.0])
+    T_target, _ = arm.forward_kinematics(q_known)
     target_pos, target_rot = extract_pose(T_target)
     solutions = analytical_ik_spherical_wrist(arm, target_pos, target_rot)
-    # Should find at least two distinct solutions (elbow branches)
-    if len(solutions) >= 2:
-        diff = np.linalg.norm(solutions[0] - solutions[1])
-        assert diff > 0.01, "Two solutions are identical — branch detection failed"
+    
+    assert len(solutions) >= 2, f"Expected multiple solutions, found {len(solutions)}"
+    
+    elbow_angles = [np.degrees(sol[2]) for sol in solutions]
+    has_elbow_down = any(np.isclose(a, 45.0, atol=1.0) for a in elbow_angles)
+    has_elbow_up = any(np.isclose(a, 135.0, atol=1.0) for a in elbow_angles)
+    
+    assert has_elbow_down, f"Elbow-down solution (~45 deg) missing. Found elbow angles: {elbow_angles}"
+    assert has_elbow_up, f"Elbow-up solution (~135 deg) missing. Found elbow angles: {elbow_angles}"
+    
+    # Every solution must reproduce position and orientation exactly
+    for sol in solutions:
+        T_check, _ = arm.forward_kinematics(sol)
+        assert np.allclose(T_check[:3, 3], target_pos, atol=1e-4)
+        from inverse_kinematics_6dof import rotation_error_vector
+        assert np.linalg.norm(rotation_error_vector(T_check[:3, :3], target_rot)) < 1e-4
 
 
 def test_6dof_analytical_ik_unreachable():
@@ -220,4 +237,50 @@ def test_6dof_analytical_ik_wrist_singularity():
             any_match = True
             break
     assert any_match, "Wrist singularity solution failed position check"
+
+
+def test_rotation_error_arbitrary_axes_near_180deg():
+    """Verify rotation error vector across multiple arbitrary axes at and near 180 degrees."""
+    from inverse_kinematics_6dof import rotation_error_vector
+    axes = [
+        np.array([1.0, -1.0, 0.0]) / np.sqrt(2.0),
+        np.array([1.0, 0.0, 0.0]),
+        np.array([0.0, 1.0, 0.0]),
+        np.array([0.0, 0.0, 1.0]),
+        np.array([1.0, 2.0, 3.0]) / np.linalg.norm([1.0, 2.0, 3.0]),
+        np.array([-1.0, 2.0, -0.5]) / np.linalg.norm([-1.0, 2.0, -0.5])
+    ]
+    for ax in axes:
+        for delta in [0.0, 1e-5, 1e-4, 1e-3, 0.05]:
+            theta = np.pi - delta
+            K = np.array([[0, -ax[2], ax[1]], [ax[2], 0, -ax[0]], [-ax[1], ax[0], 0]])
+            R = np.eye(3) + np.sin(theta) * K + (1.0 - np.cos(theta)) * (K @ K)
+            err = rotation_error_vector(np.eye(3), R)
+            assert np.isclose(np.linalg.norm(err), theta, atol=1e-4), (
+                f"Magnitude error at theta={theta} for axis={ax}: got {np.linalg.norm(err)}"
+            )
+            if delta > 1e-6:
+                computed_axis = err / np.linalg.norm(err)
+                assert np.allclose(computed_axis, ax, atol=1e-3)
+
+
+def test_ik_rejects_invalid_rotation_matrix():
+    """Analytical and numerical solvers must raise ValueError if target_rot is not in SO(3)."""
+    arm = RobotArm6DOF()
+    solver = NumericalIKSolver6DOF(arm)
+    target_pos = np.array([0.4, 0.2, 0.3])
+
+    # Non-orthogonal matrix
+    R_non_ortho = np.array([[1.0, 0.5, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    with pytest.raises(ValueError):
+        analytical_ik_spherical_wrist(arm, target_pos, R_non_ortho)
+    with pytest.raises(ValueError):
+        solver.solve(target_pos, R_non_ortho)
+
+    # Determinant != 1 (reflection matrix with det = -1)
+    R_refl = np.diag([1.0, 1.0, -1.0])
+    with pytest.raises(ValueError):
+        analytical_ik_spherical_wrist(arm, target_pos, R_refl)
+    with pytest.raises(ValueError):
+        solver.solve(target_pos, R_refl)
 
