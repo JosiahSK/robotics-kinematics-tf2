@@ -46,21 +46,42 @@ We want to provide an interactive, searchable, and web-hosted documentation site
 
 ---
 
-### Option C (Selected): Set `docs_dir: .` in `mkdocs.yml` with Explicit Navigation
-- **Approach:** Configure MkDocs to treat the repository root as the documentation source directory (`docs_dir: .`), filter out non-documentation directories via `exclude_docs`, and define an explicit, ordered `nav` tree matching the pedagogical learning path.
+### Option C (Selected): Place `mkdocs.yml` in `.mkdocs/` with `docs_dir: ".."`
+- **Approach:** Place `mkdocs.yml` inside a `.mkdocs/` subdirectory so that `docs_dir: ".."` resolves to the repository root, satisfying MkDocs 1.6.1's requirement that `docs_dir` must not be the direct parent of `mkdocs.yml`. Set `site_dir` to a sibling outside the repository so it is never committed.
 - **Pros:**
   - **Zero File Moves:** Every file remains in its natural, top-level git directory.
   - **Zero Link Breakage:** All 250+ relative links and images remain 100% valid.
+  - **MkDocs 1.6.1 Compatible:** Satisfies the hard check that `docs_dir != parent(config_file)`.
   - **Dual Usability:** The repository reads seamlessly directly on GitHub (in native Markdown) AND compiles into a static website with search, syntax highlighting, and KaTeX math formatting.
 - **Verdict:** **Adopted** as the canonical architecture.
+
+> **Why not `docs_dir: "."`?**
+> MkDocs 1.6.1 added a hard validation error:
+> `"The 'docs_dir' should not be the parent directory of the config file."`
+> This fires whenever `mkdocs.yml` sits in the same directory as `docs_dir`. The `.mkdocs/` subdirectory pattern is the minimal workaround — the config file moves one level down; `docs_dir: ".."` still resolves to the repo root.
 
 ---
 
 ## 3. Implementation Details
 
-The root `mkdocs.yml` configures:
-1. `docs_dir: .`
-2. `exclude_docs` for `.git/**`, `venv/**`, `.pytest_cache/**`, `scripts/**`, and non-doc build artifacts.
-3. Math rendering via `pymdownx.arithmatex` with KaTeX / MathJax JavaScript CDN.
-4. Mermaid diagram rendering via `pymdownx.superfences`.
-5. Material theme features: navigation tabs, instant search, code block copy button, and dark/light mode toggle.
+The configuration at `.mkdocs/mkdocs.yml` configures:
+1. `docs_dir: ".."` — resolves to the repository root (one level up from `.mkdocs/`).
+2. `site_dir: "../../robotics-notes-site"` — sibling to the repo root; never committed; listed in `.gitignore`.
+3. `exclude_docs` for `.git/**`, `venv/**`, `.pytest_cache/**`, `scripts/**`, `eduarm_description/**`, Python source files (`04-python-robotics/**/*.py`), workflow and config files, and other non-documentation artifacts.
+4. Math rendering via `pymdownx.arithmatex` with MathJax CDN.
+5. Mermaid diagram rendering via `pymdownx.superfences.fence_code_format`.
+6. Material theme features: navigation tabs, instant search, code block copy button, and dark/light mode toggle.
+
+To build the documentation locally:
+
+```bash
+# From the repository root
+python -m mkdocs build -f .mkdocs/mkdocs.yml --strict
+```
+
+To serve locally with live-reload:
+
+```bash
+python -m mkdocs serve -f .mkdocs/mkdocs.yml
+```
+

@@ -59,3 +59,7 @@ Thumbs.db
 # Large generated data / scratch files
 scratch/
 *.bak
+
+# MkDocs built site output (site_dir is placed outside the repo root)
+../robotics-notes-site/
+site/

@@ -76,15 +76,18 @@ Created a standalone ROS 2 package:
 ---
 
 ### Phase 5: Automated Test Suite & CI/CD
-- **Full Test Suite:** 34 tests in `04-python-robotics/tests/`:
+- **Full Test Suite (as of commit `3dfca10`):** 39 tests in `04-python-robotics/tests/`:
   - 3 DH transform tests
   - 5 Forward kinematics tests (including known poses and URDF consistency)
-  - 13 Inverse kinematics tests (planar 2R, 6-DOF numerical, 6-DOF analytical, elbow branches, wrist singularities, orientation error norms at $0^\circ, 90^\circ, 180^\circ$)
+  - 13 Inverse kinematics tests (planar 2R, 6-DOF numerical, 6-DOF analytical, elbow branches, wrist singularities, orientation error norms at $0°, 90°, 180°$)
   - 4 Jacobian & manipulability tests (including SVD robustness test)
   - 5 3D rotation and parameterization tests
   - 4 Homogeneous transformation tests
-- **Result:** `34 passed in 0.59s` (exit code 0).
+  - 5 additional analytical IK branch, orientation accuracy, and round-trip tests added in iteration 2
+- **Result:** `39 passed in 0.87s` (exit code 0).
 - **GitHub Actions Workflow:** `.github/workflows/ci.yml` set up to run on push/PR for Python 3.10, 3.11, 3.12 across Ubuntu and Windows runners.
+
+  > **Historical note:** The Iteration 1 audit (commit `6bc6e0e`) reported 34 tests. The suite was expanded to **39 tests** at commit `3dfca10` following the analytical IK fix and orientation-error overhaul.
 
 ---
 

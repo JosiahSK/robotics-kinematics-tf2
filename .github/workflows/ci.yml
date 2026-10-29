@@ -83,3 +83,24 @@ jobs:
           assert expected.issubset(exec_deps), f'Missing dependencies: {expected - exec_deps}'
           print('Package metadata validated successfully.')
           "
+
+  docs-build:
+    name: MkDocs Documentation Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install MkDocs Material
+        run: pip install mkdocs-material
+
+      - name: Build Documentation (strict)
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: python -m mkdocs build --strict -f .mkdocs/mkdocs.yml -d /tmp/robotics-notes-site
+

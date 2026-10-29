@@ -5,15 +5,40 @@ site_url: "https://josiahsk.github.io/robotics-kinematics-tf2/"
 repo_url: "https://github.com/JosiahSK/robotics-kinematics-tf2"
 repo_name: "JosiahSK/robotics-kinematics-tf2"
 
-docs_dir: "."
+# docs_dir is relative to the location of this mkdocs.yml file (.mkdocs/).
+# ".." resolves to the repository root — the canonical docs source.
+# MkDocs 1.6.1 forbids docs_dir == parent(mkdocs.yml), so mkdocs.yml lives
+# in .mkdocs/ to make ".." a valid parent directory.
+docs_dir: ".."
+
+# site_dir must be outside docs_dir.  Place it as a sibling to the repo root
+# so it is never committed and does not trigger the docs_dir containment check.
+site_dir: "../../robotics-notes-site"
 
 exclude_docs: |
   .git/**
+  .mkdocs/**
   venv/**
+  __pycache__/**
   .pytest_cache/**
+  *.pyc
   scripts/**
   eduarm_description/**
   assets/blender/**
+  04-python-robotics/**/*.py
+  04-python-robotics/tests/**
+  04-python-robotics/robot_pose.png
+  requirements.txt
+  requirements-dev.txt
+  .github/**
+  site/**
+  robotics-notes-site/**
+  mkdocs.yml
+  *.toml
+  *.cfg
+  *.ini
+  CMakeLists.txt
+  LICENSE
 
 theme:
   name: material
@@ -73,6 +98,17 @@ nav:
       - Overview: 00-getting-started/README.md
       - Robotics Fundamentals: 00-getting-started/robotics-fundamentals.md
       - Mathematical Prerequisites: 00-getting-started/mathematical-prerequisites.md
+  - "01: ROS 2 TF2 & Frames":
+      - Overview: 01-module-53-tf2-kinematics/README.md
+      - 01 Coordinate Frames: 01-module-53-tf2-kinematics/01-coordinate-frames.md
+      - 02 Static & Dynamic Transforms: 01-module-53-tf2-kinematics/02-static-and-dynamic-transforms.md
+      - 03 Map, Odom, Base_Link: 01-module-53-tf2-kinematics/03-map-odom-base-link.md
+      - 04 Robot Pose & Quaternions: 01-module-53-tf2-kinematics/04-robot-pose.md
+      - 05 TF2 Tools & RViz: 01-module-53-tf2-kinematics/05-tf2-tools-and-rviz.md
+      - 06 Sensor Transformations: 01-module-53-tf2-kinematics/06-sensor-transformations.md
+      - 07 ROS 2 Practical Lab: 01-module-53-tf2-kinematics/07-ros2-practical-lab.md
+      - Module 53 Exercises: 01-module-53-tf2-kinematics/exercises.md
+      - Module 53 Solutions: 01-module-53-tf2-kinematics/solutions.md
   - "02: Mathematics for Robotics":
       - Overview: 02-module-54-mathematics/README.md
       - 01 Vectors: 02-module-54-mathematics/01-vectors.md
@@ -86,17 +122,6 @@ nav:
       - 09 Covariance & Sensor Fusion: 02-module-54-mathematics/09-covariance-matrices.md
       - Module 54 Exercises: 02-module-54-mathematics/exercises.md
       - Module 54 Solutions: 02-module-54-mathematics/solutions.md
-  - "01: ROS 2 TF2 & Frames":
-      - Overview: 01-module-53-tf2-kinematics/README.md
-      - 01 Coordinate Frames: 01-module-53-tf2-kinematics/01-coordinate-frames.md
-      - 02 Static & Dynamic Transforms: 01-module-53-tf2-kinematics/02-static-and-dynamic-transforms.md
-      - 03 Map, Odom, Base_Link: 01-module-53-tf2-kinematics/03-map-odom-base-link.md
-      - 04 Robot Pose & Quaternions: 01-module-53-tf2-kinematics/04-robot-pose.md
-      - 05 TF2 Tools & RViz: 01-module-53-tf2-kinematics/05-tf2-tools-and-rviz.md
-      - 06 Sensor Transformations: 01-module-53-tf2-kinematics/06-sensor-transformations.md
-      - 07 ROS 2 Practical Lab: 01-module-53-tf2-kinematics/07-ros2-practical-lab.md
-      - Module 53 Exercises: 01-module-53-tf2-kinematics/exercises.md
-      - Module 53 Solutions: 01-module-53-tf2-kinematics/solutions.md
   - "03: Robot Kinematics":
       - Overview: 03-robot-kinematics/README.md
       - 01 Serial Kinematics: 03-robot-kinematics/01-introduction.md

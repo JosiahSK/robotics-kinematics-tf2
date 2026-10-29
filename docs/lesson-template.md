@@ -24,7 +24,9 @@ This template defines the standard 10-component structure for theoretical and pr
 [Begin with a real-world robotics scenario explaining WHY this concept exists.]
 [Include a conceptual diagram or SVG schematic visualizing the coordinate frames, forces, or kinematic chain.]
 
-Diagram syntax: `![Diagram Caption]{../assets/diagrams/<diagram-name>.svg}`
+Use standard Markdown image syntax — for example:
+`![EduArm Coordinate Frames](../assets/diagrams/01-coordinate-frames-rep103.svg)`
+Replace the path and alt text with your actual diagram filename from `assets/diagrams/`.
 
 ---
 
@@ -115,5 +117,11 @@ Norm: 0.500 m
 
 ## Navigation
 <!-- COMPONENT 10: PREV / NEXT / PARENT LINKS -->
-Navigation syntax: `| [← Previous]{<prev-file.md>} | [Module Index]{<README.md>} | [Next →]{<next-file.md>} |`
+Use a standard Markdown table with relative path links, for example a row like:
+
+    | ← Previous Lesson | Module Index | Next Lesson → |
+    |---|---|---|
+    | link to previous .md | link to README.md | link to next .md |
+
+Replace the cell text with real `[link text](filename.md)` Markdown links using the actual filenames.
 ```
