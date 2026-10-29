@@ -23,15 +23,15 @@ In any physical robot, relationships between components fall into two categories
    - A pan-tilt camera head tracks an object.
    *These relationships change every few milliseconds.*
 
-If we broadcasted static sensor brackets at 100 Hz over the network, we would waste significant CPU and wireless network bandwidth re-announcing something that never moves. ROS 2 solves this by splitting transforms into **`/tf_static`** (latched, broadcasted once) and **`/tf`** (continuous, high-frequency stream).
+If we broadcasted static sensor brackets at 100 Hz over the network, we would waste significant CPU and wireless network bandwidth re-announcing something that never moves. ROS 2 solves this by splitting transforms into **`/tf_static`** (published once with DDS **Transient Local** durability QoS) and **`/tf`** (continuous, high-frequency stream with Volatile durability).
 
 ```mermaid
 graph TD
-    subgraph Static ["/tf_static (Transient Local QoS - Latched)"]
-        BL1["base_link"] -->|Published Once| L1["laser_frame"]
-        BL1 -->|Published Once| C1["camera_link"]
+    subgraph Static ["/tf_static (Transient Local Durability QoS)"]
+        BL1["base_link"] -->|Published Once / Cached by DDS| L1["laser_frame"]
+        BL1 -->|Published Once / Cached by DDS| C1["camera_link"]
     end
-    subgraph Dynamic ["/tf (Volatile Best-Effort / Reliable - High Rate)"]
+    subgraph Dynamic ["/tf (Volatile Durability - High Rate Stream)"]
         O["odom"] -->|50 Hz Stream| BL2["base_link"]
         BL2 -->|100 Hz Stream| J1["arm_link_1"]
     end
@@ -49,9 +49,15 @@ graph TD
 | **Topic Name** | `/tf` | `/tf_static` |
 | **Typical Frequency** | 20 Hz – 200 Hz | Once at startup (or on topology change) |
 | **ROS 2 Message Type** | `tf2_msgs/msg/TFMessage` | `tf2_msgs/msg/TFMessage` |
-| **QoS Durability** | **Volatile** (no history for late joiners) | **Transient Local** (latched: late joiners receive last message) |
+| **QoS Durability** | **Volatile** (no history; late joiners miss past messages) | **Transient Local** (DDS stores last message for late joiners) |
 | **Network Cost** | Proportional to publish rate | Negligible |
 | **Broadcaster Class** | `tf2_ros.TransformBroadcaster` | `tf2_ros.StaticTransformBroadcaster` |
+
+> [!NOTE]
+> **ROS 2 QoS vs. Legacy ROS 1 "Latched" Topics:**
+> In ROS 1, `/tf_static` used a "latched" topic flag. In ROS 2, topic latching is replaced by DDS **Quality of Service (QoS) Durability**:
+> - `Transient Local` durability directs the DDS middleware publisher to cache the last sent message. When a new node joins later, DDS automatically delivers the cached transform without requiring the publisher to rebroadcast.
+> - The subscriber must also configure `durability=QoSInitialization(DurabilityPolicy.TRANSIENT_LOCAL)` (which `tf2_ros.Buffer` configures automatically).
 
 ---
 

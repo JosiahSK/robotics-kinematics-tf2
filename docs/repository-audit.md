@@ -4,7 +4,7 @@
 **Auditor:** Antigravity Senior Robotics Software Engineer & Educational Lead  
 **Branch:** `main`  
 **Remote Target:** `https://github.com/JosiahSK/robotics-kinematics-tf2.git`  
-**Current Commit:** `6bc6e0e`
+**Current Commit:** `3dfca10`
 
 ---
 
@@ -128,7 +128,7 @@ Authored 12 original diagrams:
 | `python 04-python-robotics/inverse_kinematics_6dof.py` | repo root | **PASSED** | Analytical exact ($10^{-16}\,\text{m}$), numerical converged in 3 iters |
 | `python 04-python-robotics/jacobian.py` | repo root | **PASSED** | Geometric vs finite-diff diff $< 10^{-10}$, DLS shape (6,6) |
 | `python 04-python-robotics/visualise_robot_arm.py --no-show` | repo root | **PASSED** | Clean headless 3D render |
-| `python scripts/check_links.py` | repo root | **PASSED** | 58 files, 187 links scanned, 0 broken links |
+| `python scripts/check_links.py` | repo root | **PASSED** | 70 files, 255 links scanned, 0 broken links |
 
 ---
 
@@ -154,7 +154,7 @@ git status
 git add .
 
 # 3. Create a descriptive commit
-git commit -m "feat: complete quality audit, corrected 6-DOF kinematics, runnable ROS 2 description, 34 passing tests, and 12 diagrams"
+git commit -m "docs: complete educational reference centre, enhance labs, standardize lessons, and add mkdocs site config"
 
 # 4. Push to remote main branch (requires your GitHub authentication)
 git push origin main

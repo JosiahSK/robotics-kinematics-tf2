@@ -21,7 +21,7 @@ graph TD
 
 ### Chapter Index
 1. [**01: Coordinate Frames & Standards**](01-coordinate-frames.md): Definitions, REP 105 conventions, right-handed coordinates, and directed tree acyclic graph rules.
-2. [**02: Static & Dynamic Transforms**](02-static-and-dynamic-transforms.md): Structural hardware geometry (`/tf_static` latched) vs real-time state estimation (`/tf` high-frequency streams).
+2. [**02: Static & Dynamic Transforms**](02-static-and-dynamic-transforms.md): Structural hardware geometry (`/tf_static` with Transient Local durability QoS) vs real-time state estimation (`/tf` high-frequency streams).
 3. [**03: The map -> odom -> base_link Hierarchy**](03-map-odom-base-link.md): Why we need both `map` and `odom`, continuous vs discrete jumps, drift compensation, and SLAM/AMCL interaction.
 4. [**04: Robot Pose, Quaternions & Timestamps**](04-robot-pose.md): 3D pose representation, Hamilton quaternions $[x, y, z, w]$, TF lookup buffers, extrapolation, and time travel.
 5. [**05: TF2 Tools & RViz Inspection**](05-tf2-tools-and-rviz.md): In-depth walkthrough of `tf2_echo`, `view_frames`, `tf2_monitor`, RViz Fixed Frame setup, and debugging broken trees.
@@ -33,7 +33,7 @@ graph TD
 
 ## Primary Reference Environment
 
-- **ROS 2 Distribution:** ROS 2 Jazzy Jalisco (LTS) & ROS 2 Iron Irwini / Humble Hawksbill compatibility.
+- **ROS 2 Distribution:** **ROS 2 Jazzy Jalisco** (Primary LTS on Ubuntu 24.04). **ROS 2 Humble Hawksbill** (Ubuntu 22.04) supported as legacy reference. *(Note: ROS 2 Iron is non-LTS/EOL and is not supported).*
 - **Middleware:** FastDDS / CycloneDDS.
 - **Build System:** `colcon`.
 - **Python Interface:** `rclpy`, `tf2_ros`, `geometry_msgs`.

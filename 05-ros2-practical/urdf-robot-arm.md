@@ -65,7 +65,38 @@ In EduArm-6DOF:
 
 ---
 
-## 4. The Tool Center Point (TCP) Fixed Joint
+## 4. Crucial Distinction: Standard DH Frames vs. URDF Joint-Reference Conventions
+
+A common source of confusion in robotics software is the difference between **Denavit–Hartenberg mathematical frames** and **URDF CAD coordinate conventions**:
+
+| Feature | Standard DH Model (`RobotArm6DOF`) | URDF Visualization Model (`eduarm_6dof.urdf`) |
+| :--- | :--- | :--- |
+| **Zero Configuration ($\mathbf{q} = \mathbf{0}$)** | Link 4 hangs straight down along $-Z_0$ (elbow bent $90^\circ$). TCP is at $[0.500, 0.000, -0.150]^T\,\text{m}$. | Arm is fully outstretched horizontally along $+X_0$. TCP is at $[1.050, 0.000, 0.400]^T\,\text{m}$. |
+| **Elbow Zero ($\theta_3 = 0$)** | Link 4 is perpendicular to Link 2 ($\alpha_3 = +90^\circ$). | Forearm is collinear with upper arm (straight arm). |
+| **Pitch Joint Axes** | DH $z_1, z_2$ point along $-Y_0$ base direction. | URDF joint axes for J2, J3, J5 point along $+Y$. |
+| **Tool Flange Frame** | $z_6$ points forward along the tool; $x_6$ points up. | $x$ points forward along tool; $z$ points up (REP 103). |
+
+### Exact Joint Angle Conversions:
+To execute kinematics algorithms on a robot visualized in ROS 2, convert joint states using the explicit mappings implemented in [`forward_kinematics_6dof.py`](../04-python-robotics/forward_kinematics_6dof.py):
+
+$$\begin{aligned}
+q_{1, DH} &= q_{1, URDF} \\
+q_{2, DH} &= -q_{2, URDF} \quad &&\text{(pitch axis sign inversion)} \\
+q_{3, DH} &= \frac{\pi}{2} - q_{3, URDF} \quad &&\text{($90^\circ$ elbow offset)} \\
+q_{4, DH} &= q_{4, URDF} \\
+q_{5, DH} &= -q_{5, URDF} \quad &&\text{(wrist pitch sign inversion)} \\
+q_{6, DH} &= q_{6, URDF}
+\end{aligned}$$
+
+### Tool Flange Orientation Mapping:
+The tool orientation in URDF relates to the DH flange orientation by:
+$$\mathbf{R}_{URDF} = \mathbf{R}_{DH} \begin{bmatrix} 0 & 0 & 1 \\ 0 & -1 & 0 \\ 1 & 0 & 0 \end{bmatrix}$$
+
+This guarantees identical Cartesian spatial positions ($\|\Delta\mathbf{p}\| < 10^{-7}\,\text{m}$) and orientations across all configurations, as verified in `test_fk.py::test_urdf_fk_vs_dh_fk_multi_configuration`.
+
+---
+
+## 5. The Tool Center Point (TCP) Fixed Joint
 
 To track the exact tip of a tool without adding a moving degree of freedom, append a **fixed joint** with a massless link:
 
@@ -84,7 +115,7 @@ Now, any ROS 2 node can immediately query the transform `map -> tool_center_poin
 
 ---
 
-## 5. Summary & Next Steps
+## 6. Summary & Next Steps
 - URDF provides the XML standard for modeling robot links, visuals, collisions, and joint limits.
 - The `robot_state_publisher` reads this URDF to publish the TF tree.
 - Now test your knowledge in hands-on practical labs in [**Module 06: Labs and Projects**](../06-labs-and-projects/README.md).

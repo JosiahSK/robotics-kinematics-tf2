@@ -1,0 +1,148 @@
+site_name: "Robotics & AI Student Notes: Kinematics, TF2 & Robotics Mathematics"
+site_description: "Engineering-grade educational textbook and interactive laboratory repository for robotics, kinematics, TF2, and Denavit-Hartenberg modeling."
+site_author: "JosiahSK"
+site_url: "https://josiahsk.github.io/robotics-kinematics-tf2/"
+repo_url: "https://github.com/JosiahSK/robotics-kinematics-tf2"
+repo_name: "JosiahSK/robotics-kinematics-tf2"
+
+docs_dir: "."
+
+exclude_docs: |
+  .git/**
+  venv/**
+  .pytest_cache/**
+  scripts/**
+  eduarm_description/**
+  assets/blender/**
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - admonition
+  - tables
+  - attr_list
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js
+
+nav:
+  - Home: README.md
+  - "00: Getting Started":
+      - Overview: 00-getting-started/README.md
+      - Robotics Fundamentals: 00-getting-started/robotics-fundamentals.md
+      - Mathematical Prerequisites: 00-getting-started/mathematical-prerequisites.md
+  - "02: Mathematics for Robotics":
+      - Overview: 02-module-54-mathematics/README.md
+      - 01 Vectors: 02-module-54-mathematics/01-vectors.md
+      - 02 Matrices: 02-module-54-mathematics/02-matrices.md
+      - 03 Dot & Cross Products: 02-module-54-mathematics/03-dot-and-cross-products.md
+      - 04 Homogeneous Transforms: 02-module-54-mathematics/04-homogeneous-transformations.md
+      - 05 Calculus for Robotics: 02-module-54-mathematics/05-derivatives-and-calculus.md
+      - 06 Jacobians & Gradients: 02-module-54-mathematics/06-jacobians.md
+      - 07 Probability & Bayes: 02-module-54-mathematics/07-probability.md
+      - 08 Gaussian Distributions: 02-module-54-mathematics/08-gaussian-distributions.md
+      - 09 Covariance & Sensor Fusion: 02-module-54-mathematics/09-covariance-matrices.md
+      - Module 54 Exercises: 02-module-54-mathematics/exercises.md
+      - Module 54 Solutions: 02-module-54-mathematics/solutions.md
+  - "01: ROS 2 TF2 & Frames":
+      - Overview: 01-module-53-tf2-kinematics/README.md
+      - 01 Coordinate Frames: 01-module-53-tf2-kinematics/01-coordinate-frames.md
+      - 02 Static & Dynamic Transforms: 01-module-53-tf2-kinematics/02-static-and-dynamic-transforms.md
+      - 03 Map, Odom, Base_Link: 01-module-53-tf2-kinematics/03-map-odom-base-link.md
+      - 04 Robot Pose & Quaternions: 01-module-53-tf2-kinematics/04-robot-pose.md
+      - 05 TF2 Tools & RViz: 01-module-53-tf2-kinematics/05-tf2-tools-and-rviz.md
+      - 06 Sensor Transformations: 01-module-53-tf2-kinematics/06-sensor-transformations.md
+      - 07 ROS 2 Practical Lab: 01-module-53-tf2-kinematics/07-ros2-practical-lab.md
+      - Module 53 Exercises: 01-module-53-tf2-kinematics/exercises.md
+      - Module 53 Solutions: 01-module-53-tf2-kinematics/solutions.md
+  - "03: Robot Kinematics":
+      - Overview: 03-robot-kinematics/README.md
+      - 01 Serial Kinematics: 03-robot-kinematics/01-introduction.md
+      - 02 Coordinate Frames: 03-robot-kinematics/02-coordinate-frames.md
+      - 03 3D Rotation Matrices: 03-robot-kinematics/03-rotation-matrices.md
+      - 04 Homogeneous Transforms: 03-robot-kinematics/04-homogeneous-transformations.md
+      - 05 Denavit-Hartenberg Convention: 03-robot-kinematics/05-denavit-hartenberg.md
+      - 06 Forward Kinematics: 03-robot-kinematics/06-forward-kinematics.md
+      - 07 Inverse Kinematics: 03-robot-kinematics/07-inverse-kinematics.md
+      - 08 6-DOF Arm Case Study: 03-robot-kinematics/08-six-dof-arm.md
+      - 09 Manipulator Jacobian: 03-robot-kinematics/09-jacobian-kinematics.md
+      - 10 Singularities & Limits: 03-robot-kinematics/10-singularities-and-joint-limits.md
+      - Kinematics Exercises: 03-robot-kinematics/exercises.md
+      - Kinematics Solutions: 03-robot-kinematics/solutions.md
+  - "04: Python Implementations":
+      - Python Architecture & Tests: 04-python-robotics/README.md
+  - "05: ROS 2 Practical":
+      - Overview: 05-ros2-practical/README.md
+      - TF2 Architecture: 05-ros2-practical/tf2-practical.md
+      - Robot State Publisher: 05-ros2-practical/robot-state-publisher.md
+      - RViz 3D Visualisation: 05-ros2-practical/rviz-visualization.md
+      - URDF Robot Arm Specification: 05-ros2-practical/urdf-robot-arm.md
+  - "06: Practical Labs":
+      - Lab Overview: 06-labs-and-projects/README.md
+      - Lab 01 (TF2 & RViz): 06-labs-and-projects/lab-01-tf2-visualization.md
+      - Lab 02 (Sensor Transforms): 06-labs-and-projects/lab-02-coordinate-transformations.md
+      - Lab 03 (Forward Kinematics): 06-labs-and-projects/lab-03-forward-kinematics.md
+      - Lab 04 (Planar IK): 06-labs-and-projects/lab-04-inverse-kinematics.md
+      - Lab 05 (6-DOF Arm Decoupling): 06-labs-and-projects/lab-05-six-dof-arm.md
+      - Lab 06 (Jacobian IK & Singularities): 06-labs-and-projects/lab-06-jacobian-ik.md
+  - "07: Assessments":
+      - Assessments Overview: 07-assessments/README.md
+      - Quiz 01 (Module 53 TF2): 07-assessments/quiz-module-53.md
+      - Quiz 02 (Module 54 Math): 07-assessments/quiz-module-54.md
+      - Quiz 03 (Kinematics): 07-assessments/quiz-kinematics.md
+      - Master Answer Key: 07-assessments/answer-key.md
+  - "Reference Centre":
+      - Reference Hub: docs/reference/README.md
+      - Glossary: docs/reference/glossary.md
+      - Kinematics Formula Sheet: docs/reference/kinematics-formula-sheet.md
+      - DH Parameters Cheat Sheet: docs/reference/dh-parameters-cheat-sheet.md
+      - ROS 2 TF2 Cheat Sheet: docs/reference/ros2-tf2-cheat-sheet.md
+      - Notation & Units: docs/reference/notation-and-units.md
+      - Troubleshooting FAQ: docs/reference/troubleshooting-faq.md
+      - Student Progress Checklist: docs/reference/student-checklist.md
+      - Visual Diagram Index: docs/visual-index.md
+      - Repository Audit: docs/repository-audit.md
+      - MkDocs Architecture: docs/mkdocs-architecture-decision.md
+      - Lesson Template: docs/lesson-template.md

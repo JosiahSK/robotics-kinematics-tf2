@@ -17,7 +17,7 @@ graph TD
 1. [**TF2 Practical Deep-Dive**](tf2-practical.md): How TF2 powers the ROS 2 computational graph, transform lookups in callbacks, and message filters.
 2. [**The Robot State Publisher**](robot-state-publisher.md): Role of `robot_state_publisher`, kinematic tree parsing from URDF, and conversion of `sensor_msgs/msg/JointState` into 3D TF frames.
 3. [**RViz Visualisation Guide**](rviz-visualization.md): Step-by-step setup of `RobotModel`, TF axes, joint sliders, fixed frame selection, and mesh visual/collision debugging.
-4. [**URDF Model of the 6-DOF Robot Arm**](urdf-robot-arm.md): Complete, functional URDF specification for **EduArm-6DOF**, link definitions, revolute joint limits, materials, and origin offsets matching our standard DH table.
+4. [**URDF Model of the 6-DOF Robot Arm**](urdf-robot-arm.md): Complete, functional URDF specification for **EduArm-6DOF**, link definitions, revolute joint limits, materials, and explicit mathematical mapping between DH frames and URDF joint conventions.
 5. [**URDF File**](urdf/eduarm_6dof.urdf): The raw, ready-to-load URDF file.
 
 ---

@@ -1,5 +1,13 @@
 # Lab 01: TF2 Tree Inspection and RViz Visualisation
 
+> **Prerequisites:** [01: Coordinate Frames & The TF Tree](../01-module-53-tf2-kinematics/01-coordinate-frames.md), [02: Static & Dynamic Transforms](../01-module-53-tf2-kinematics/02-static-and-dynamic-transforms.md), ROS 2 environment (Jazzy / Humble).  
+> **Estimated Time:** 45–60 minutes  
+> **Code Files:**
+> - Starter / Reference: [Module 53 Lab Reference](../01-module-53-tf2-kinematics/07-ros2-practical-lab.md)
+> - Reference RViz Launch: [`eduarm_description/launch/view_arm.launch.py`](../eduarm_description/launch/view_arm.launch.py)
+
+---
+
 ## 1. Laboratory Objectives
 In this laboratory, you will:
 1. Launch a multi-sensor mobile robot transform tree in ROS 2.
@@ -11,32 +19,42 @@ In this laboratory, you will:
 ---
 
 ## 2. Theoretical Background
-Before writing code, recall the cardinal rule of TF2 from [Module 53 Chapter 01](../01-module-53-tf2-kinematics/01-coordinate-frames.md):
+Before executing commands, recall the cardinal rules of TF2 from [Module 53 Chapter 01](../01-module-53-tf2-kinematics/01-coordinate-frames.md):
 - A valid TF tree must be a **connected, directed acyclic tree**.
 - Every child frame must have **exactly one parent**.
+- Dynamic frames publish on `/tf` with Volatile QoS; static frames publish on `/tf_static` with **Transient Local durability QoS**.
 
 ---
 
-## 3. Step-by-Step Lab Procedure
+## 3. Step-by-Step Task Sequence
 
 ### Step 3.1: Launch Static Sensor Broadcasters
-Open Terminal 1 and broadcast the static LiDAR and Camera offsets:
+Open Terminal 1 and broadcast the static LiDAR offset relative to the robot base:
 ```bash
 # Terminal 1: Static LiDAR (25 cm forward, 15 cm up)
-ros2 run tf2_ros static_transform_publisher --x 0.25 --y 0.0 --z 0.15 --roll 0.0 --pitch 0.0 --yaw 0.0 --frame-id base_link --child-frame-id laser_frame
+ros2 run tf2_ros static_transform_publisher \
+  --x 0.25 --y 0.0 --z 0.15 \
+  --roll 0.0 --pitch 0.0 --yaw 0.0 \
+  --frame-id base_link --child-frame-id laser_frame
 ```
 
-Open Terminal 2 and broadcast the Camera frame:
+Open Terminal 2 and broadcast the Camera frame (pitched down by $15^\circ \approx 0.2618\,\text{rad}$):
 ```bash
 # Terminal 2: Static Camera (20 cm forward, 40 cm up, tilted down 15 deg)
-ros2 run tf2_ros static_transform_publisher --x 0.20 --y 0.0 --z 0.40 --roll 0.0 --pitch 0.2618 --yaw 0.0 --frame-id base_link --child-frame-id camera_link
+ros2 run tf2_ros static_transform_publisher \
+  --x 0.20 --y 0.0 --z 0.40 \
+  --roll 0.0 --pitch 0.2618 --yaw 0.0 \
+  --frame-id base_link --child-frame-id camera_link
 ```
 
 ### Step 3.2: Launch the Odometry Broadcaster
-Open Terminal 3 and run the dynamic circular odometry publisher from [Module 53 Chapter 07](../01-module-53-tf2-kinematics/07-ros2-practical-lab.md):
+Open Terminal 3 and broadcast dynamic circular odometry:
 ```bash
-# Terminal 3: Dynamic odom -> base_link stream
-ros2 run tf2_practical_lab dynamic_odom_broadcaster
+# Terminal 3: Dynamic odom -> base_link stream (or custom broadcaster)
+ros2 run tf2_ros static_transform_publisher \
+  --x 1.0 --y 0.5 --z 0.0 \
+  --roll 0.0 --pitch 0.0 --yaw 0.7854 \
+  --frame-id odom --child-frame-id base_link
 ```
 
 ### Step 3.3: Verify Real-Time Transformation
@@ -44,17 +62,25 @@ Open Terminal 4 and query the transformation from `odom` to `laser_frame`:
 ```bash
 ros2 run tf2_ros tf2_echo odom laser_frame
 ```
-Observe how the translation updates continuously at 50 Hz as the robot orbits.
+
+#### Expected Result:
+```text
+At time 0.0
+- Translation: [1.177, 0.677, 0.150]
+- Rotation: in Quaternion [0.000, 0.000, 0.383, 0.924]
+- Rotation: in RPY (radian) [0.000, -0.000, 0.785]
+- Rotation: in RPY (degree) [0.000, -0.000, 45.000]
+```
 
 ### Step 3.4: Generate the TF Tree Diagram
 In Terminal 4, run:
 ```bash
 ros2 run tf2_tools view_frames
 ```
-Open the generated `frames.pdf`:
-- Verify that `odom` is the root node.
-- Verify that `base_link` has parent `odom`.
-- Verify that both `laser_frame` and `camera_link` have parent `base_link`.
+This generates `frames.pdf` in your current directory. Verify:
+- `odom` is the root node.
+- `base_link` has parent `odom`.
+- `laser_frame` and `camera_link` both have parent `base_link`.
 
 ### Step 3.5: RViz2 Configuration
 Launch RViz:
@@ -68,19 +94,34 @@ rviz2
 
 ---
 
-## 4. Lab Challenge & Troubleshooting Exercise
-Simulate an error by running:
+## 4. Verification Checkpoints
+- [ ] `tf2_echo odom laser_frame` prints without timeouts or extrapolation errors.
+- [ ] `view_frames` produces a PDF containing all 4 frames in a single tree.
+- [ ] In RViz, no frame displays an error status or missing transform warning.
+
+---
+
+## 5. Lab Challenge & Troubleshooting
+Simulate a multiple-parent error by running in another terminal:
 ```bash
 ros2 run tf2_ros static_transform_publisher --x 1.0 --y 0.0 --z 0.0 --frame-id world --child-frame-id base_link
 ```
-1. Observe what happens in RViz. Why does `base_link` start jittering rapidly?
-2. Run `view_frames` and identify the multiple parent violation.
+1. Observe what happens in RViz. Notice that `base_link` jitters between `odom` and `world`.
+2. Run `view_frames` and confirm the dual parent conflict.
 3. Terminate the conflicting publisher to restore tree integrity.
 
 ---
 
-## 5. Lab Deliverables
-Submit:
-1. The generated `frames.pdf` showing a clean, single-parent tree.
-2. A screenshot of RViz2 displaying the orbiting `base_link` and attached sensors.
-3. Your written answers explaining why `world` and `odom` cannot both be parents of `base_link`.
+## 6. Extension Task
+Add an optical sensor frame `camera_depth_optical_frame` child of `camera_link`:
+- In standard computer vision optical frames (REP 103), $+Z$ points forward into the scene, $+X$ points right, and $+Y$ points downward.
+- Determine the required roll, pitch, and yaw angles to rotate from standard ROS coordinates ($+X$ forward, $+Y$ left, $+Z$ up) into optical coordinates.
+- Broadcast this frame and verify with `ros2 run tf2_ros tf2_echo camera_link camera_depth_optical_frame`.
+
+---
+
+## 7. Lab Deliverables
+Submit a brief report including:
+1. The generated `frames.pdf` showing your clean, single-parent tree.
+2. A screenshot of RViz2 displaying all frames correctly oriented.
+3. Your calculated rotation angles for the camera optical extension task.

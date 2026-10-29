@@ -22,7 +22,7 @@ We are committed to providing a welcoming, inclusive, and harassment-free enviro
 - **Fixing Typos & Clarifying Explanations:** If an explanation or derivation feels confusing, submit an improvement.
 - **Adding Worked Examples:** Practical, step-by-step engineering examples help students bridge theory and real hardware.
 - **Improving Unit Tests:** Extend edge case coverage in `04-python-robotics/tests/`.
-- **Expanding ROS 2 Nodes:** Add launch files, URDF snippets, or TF2 broadcaster examples compatible with ROS 2 Jazzy and Iron.
+- **Expanding ROS 2 Nodes:** Add launch files, URDF snippets, or TF2 broadcaster examples compatible with ROS 2 Jazzy (primary LTS) or Humble (legacy LTS).
 
 ---
 

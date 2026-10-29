@@ -13,11 +13,11 @@ This directory contains executable, tested, and mathematically verified Python i
 | [`dh_transform.py`](dh_transform.py) | Standard Denavit-Hartenberg matrices | `dh_matrix`, `chain_dh_matrices`, `invert_homogeneous_matrix` |
 | [`forward_kinematics_2d.py`](forward_kinematics_2d.py) | 2-Link and 3-Link planar forward kinematics | `fk_2link_planar`, `fk_2link_dh`, `fk_3link_planar` |
 | [`inverse_kinematics_2d.py`](inverse_kinematics_2d.py) | Analytical planar inverse kinematics | `ik_2link_planar` (elbow-up & down), `ik_3link_planar` |
-| [`forward_kinematics_6dof.py`](forward_kinematics_6dof.py) | 6-DOF articulated serial robot forward kinematics | `RobotArm6DOF`, `forward_kinematics`, `get_wrist_center` |
+| [`forward_kinematics_6dof.py`](forward_kinematics_6dof.py) | 6-DOF articulated serial robot forward kinematics | `RobotArm6DOF`, `forward_kinematics`, `urdf_to_dh_joints`, `dh_to_urdf_joints` |
 | [`inverse_kinematics_6dof.py`](inverse_kinematics_6dof.py) | Analytical (wrist decoupling) & Numerical (DLS) IK | `analytical_ik_spherical_wrist`, `NumericalIKSolver6DOF` |
 | [`jacobian.py`](jacobian.py) | Geometric Jacobian, finite-difference validation, SVD | `geometric_jacobian_6dof`, `damped_least_squares_inverse`, `manipulability_index` |
 | [`visualise_robot_arm.py`](visualise_robot_arm.py) | 3D Matplotlib visualizer for robot arm | `visualize_robot_arm`, `plot_coordinate_frame` |
-| [`tests/`](tests/) | Complete automated test suite using `pytest` | 22 comprehensive unit tests covering all core modules |
+| [`tests/`](tests/) | Complete automated test suite using `pytest` | 39 comprehensive unit tests covering all core modules |
 
 ---
 
@@ -49,7 +49,7 @@ pytest -v tests/
 
 Expected output:
 ```text
-============================= 22 passed in ~1.4s ==============================
+============================= 39 passed in ~1.0s ==============================
 ```
 
 ---
